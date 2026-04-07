@@ -3,7 +3,19 @@ import { NextResponse, type NextRequest } from "next/server";
 
 function safeInternalPath(next: string): string {
 	if (!next.startsWith("/") || next.startsWith("//")) return "/dashboard";
-	return next;
+	const allowedPrefixes = [
+		"/dashboard",
+		"/customers",
+		"/entries",
+		"/products",
+		"/billing",
+		"/ledger",
+		"/settings",
+	];
+	if (allowedPrefixes.some((p) => next === p || next.startsWith(`${p}/`))) {
+		return next;
+	}
+	return "/dashboard";
 }
 
 export async function POST(request: NextRequest) {
