@@ -28,3 +28,6 @@ Thumbs.db
 *.pem
 *.key
 
+# typescript incremental
+*.tsbuildinfo
+

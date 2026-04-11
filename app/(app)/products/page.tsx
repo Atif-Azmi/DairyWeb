@@ -16,7 +16,7 @@ interface Product {
   id: number;
   name: string;
   default_rate: number;
-  unit: string;
+  unit: "liter" | "kg";
 }
 
 const ProductsPage = () => {
@@ -176,14 +176,15 @@ const ProductForm = ({
   const { t, lang } = useI18n();
   const [name, setName] = useState("");
   const [rate, setRate] = useState("");
-  const [unit, setUnit] = useState("liter");
+  type ProductUnit = "liter" | "kg";
+  const [unit, setUnit] = useState<ProductUnit>("liter");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setName(product?.name || "");
     setRate(product?.default_rate?.toString() || "");
-    setUnit(product?.unit || "liter");
+    setUnit(product?.unit === "kg" ? "kg" : "liter");
   }, [product]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -242,7 +243,7 @@ const ProductForm = ({
       <Select
         label={t("form.unit")}
         value={unit}
-        onChange={setUnit}
+        onChange={(v) => setUnit(v === "kg" ? "kg" : "liter")}
         options={[
           { value: "liter", label: "Liter" },
           { value: "kg", label: "Kg" },

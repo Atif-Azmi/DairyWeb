@@ -23,7 +23,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     defaultType ?? "payment"
   );
   const [amount, setAmount] = useState("");
-  const [paymentMode, setPaymentMode] = useState("cash");
+  type PaymentMode = "cash" | "online" | "upi";
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>("cash");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,7 +52,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           amount: Number(amount),
           payment_mode: paymentMode,
           date,
-          note,
+          note: note.trim() ? note.trim() : null,
         },
       ]);
 
@@ -94,7 +95,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         <Select
           label={t("tx.paymentMode")}
           value={paymentMode}
-          onChange={setPaymentMode}
+          onChange={(v) =>
+            setPaymentMode(v === "online" ? "online" : v === "upi" ? "upi" : "cash")
+          }
           options={[
             { value: "cash", label: t("tx.cash") },
             { value: "online", label: t("tx.online") },

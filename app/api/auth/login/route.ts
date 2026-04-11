@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import type { Database } from "@/lib/database.types";
+
 function safeInternalPath(next: string): string {
 	if (!next.startsWith("/") || next.startsWith("//")) return "/dashboard";
 	const allowedPrefixes = [
@@ -36,7 +38,7 @@ export async function POST(request: NextRequest) {
 		status: 303,
 	});
 
-	const supabase = createServerClient(
+	const supabase = createServerClient<Database>(
 		process.env.NEXT_PUBLIC_SUPABASE_URL!,
 		process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 		{
