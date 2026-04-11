@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getAuthenticatedSupabase } from "@/lib/auth-api";
+import { json } from "@/lib/http";
 
 export async function GET(req: NextRequest) {
   const auth = await getAuthenticatedSupabase();
@@ -10,10 +11,7 @@ export async function GET(req: NextRequest) {
   const endDate = searchParams.get("end_date");
 
   if (!startDate || !endDate) {
-    return NextResponse.json(
-      { error: "start_date and end_date are required" },
-      { status: 400 }
-    );
+    return json({ error: "start_date and end_date are required" }, { status: 400 });
   }
 
   try {
@@ -90,7 +88,7 @@ export async function GET(req: NextRequest) {
       .slice(0, 5)
       .map(([name, total_purchase]) => ({ name, total_purchase }));
 
-    return NextResponse.json({
+    return json({
       totalSales,
       totalMilk,
       totalGheeKg,
@@ -102,6 +100,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return json({ error: message }, { status: 500 });
   }
 }

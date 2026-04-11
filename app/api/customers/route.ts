@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getAuthenticatedSupabase } from "@/lib/auth-api";
+import { json } from "@/lib/http";
 
 export async function GET() {
   const auth = await getAuthenticatedSupabase();
@@ -10,8 +11,8 @@ export async function GET() {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  if (error) return json({ error: error.message }, { status: 500 });
+  return json(data);
 }
 
 export async function POST(req: NextRequest) {
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   const { name, phone, address, default_milk_qty, custom_milk_rate } =
     await req.json();
 
-  if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  if (!name) return json({ error: "Name is required" }, { status: 400 });
 
   const { data, error } = await auth.supabase
     .from("customers")
@@ -29,6 +30,6 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
+  if (error) return json({ error: error.message }, { status: 500 });
+  return json(data, { status: 201 });
 }

@@ -35,50 +35,51 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSuccess }) => {
     setIsSubmitting(true);
     setError(null);
 
-    if (normalizedPhone) {
-      let existsQuery = supabaseClient
-        .from("customers")
-        .select("id, name, phone")
-        .eq("phone", normalizedPhone)
-        .limit(1);
-      if (customer?.id) {
-        existsQuery = existsQuery.neq("id", customer.id);
-      }
-      const { data: existing } = await existsQuery.maybeSingle();
-      if (existing) {
-        setIsSubmitting(false);
-        setError(`Phone already exists for customer "${existing.name}".`);
-        return;
-      }
-    }
-
-    const customerData = {
-      name: name.trim(),
-      phone: normalizedPhone || null,
-      address,
-      default_milk_qty: Number(defaultMilkQty) || null,
-    };
-
-    const { error: submissionError } = customer?.id
-      ? await supabaseClient
+    try {
+      if (normalizedPhone) {
+        let existsQuery = supabaseClient
           .from("customers")
-          .update(customerData)
-          .eq("id", customer.id)
-      : await supabaseClient.from("customers").insert([customerData]);
-
-    setIsSubmitting(false);
-
-    if (submissionError) {
-      console.error("Error saving customer:", submissionError);
-      setError(submissionError.message || "Failed to save customer. Please try again.");
-    } else {
-      if (!customer?.id) {
-        setName("");
-        setPhone("");
-        setAddress("");
-        setDefaultMilkQty("");
+          .select("id, name, phone")
+          .eq("phone", normalizedPhone)
+          .limit(1);
+        if (customer?.id) {
+          existsQuery = existsQuery.neq("id", customer.id);
+        }
+        const { data: existing } = await existsQuery.maybeSingle();
+        if (existing) {
+          setError(`Phone already exists for customer "${existing.name}".`);
+          return;
+        }
       }
-      onSuccess(); // Callback to parent to refetch/close form
+
+      const customerData = {
+        name: name.trim(),
+        phone: normalizedPhone || null,
+        address,
+        default_milk_qty: Number(defaultMilkQty) || null,
+      };
+
+      const { error: submissionError } = customer?.id
+        ? await supabaseClient
+            .from("customers")
+            .update(customerData)
+            .eq("id", customer.id)
+        : await supabaseClient.from("customers").insert([customerData]);
+
+      if (submissionError) {
+        console.error("Error saving customer:", submissionError);
+        setError(submissionError.message || "Failed to save customer. Please try again.");
+      } else {
+        if (!customer?.id) {
+          setName("");
+          setPhone("");
+          setAddress("");
+          setDefaultMilkQty("");
+        }
+        onSuccess();
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

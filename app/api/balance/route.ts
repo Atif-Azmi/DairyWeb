@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getAuthenticatedSupabase } from "@/lib/auth-api";
+import { json } from "@/lib/http";
 
 export async function GET(req: NextRequest) {
   const auth = await getAuthenticatedSupabase();
@@ -9,7 +10,7 @@ export async function GET(req: NextRequest) {
   const customerId = searchParams.get("customerId");
 
   if (!customerId) {
-    return NextResponse.json({ error: "Customer ID is required" }, { status: 400 });
+    return json({ error: "Customer ID is required" }, { status: 400 });
   }
 
   const { data: entries, error: entriesError } = await auth.supabase
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
     .eq("customer_id", customerId);
 
   if (entriesError) {
-    return NextResponse.json({ error: entriesError.message }, { status: 500 });
+    return json({ error: entriesError.message }, { status: 500 });
   }
 
   const { data: transactions, error: txError } = await auth.supabase
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
     .eq("customer_id", customerId);
 
   if (txError) {
-    return NextResponse.json({ error: txError.message }, { status: 500 });
+    return json({ error: txError.message }, { status: 500 });
   }
 
   const totalSales = (entries || []).reduce(
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
     0
   );
 
-  return NextResponse.json({
+  return json({
     totalSales,
     totalPayments,
     balance: totalSales - totalPayments,

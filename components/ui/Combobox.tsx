@@ -75,7 +75,7 @@ export default function Combobox({
         onFocus={() => setOpen(true)}
         disabled={disabled}
         placeholder={placeholder}
-        className="flex h-10 w-full rounded-md border border-border bg-white/80 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-11 min-h-[44px] w-full rounded-md border border-border bg-white/80 px-3 py-2 text-base sm:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
         aria-autocomplete="list"
         aria-expanded={open}
       />

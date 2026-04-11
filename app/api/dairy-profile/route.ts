@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getAuthenticatedSupabase } from "@/lib/auth-api";
+import { json } from "@/lib/http";
 
 export async function GET() {
   const auth = await getAuthenticatedSupabase();
@@ -11,8 +12,8 @@ export async function GET() {
     .eq("id", 1)
     .maybeSingle();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  if (error) return json({ error: error.message }, { status: 500 });
+  return json(data);
 }
 
 export async function PATCH(req: NextRequest) {
@@ -42,6 +43,6 @@ export async function PATCH(req: NextRequest) {
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  if (error) return json({ error: error.message }, { status: 500 });
+  return json(data);
 }

@@ -57,9 +57,11 @@ const DashboardPage = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const fetchAnalytics = useCallback(async (currentFilter: string, customStart?: string, customEnd?: string) => {
     setError(null);
+    setLoading(true);
     const range =
       currentFilter === "custom" && customStart && customEnd
         ? { start: customStart, end: customEnd }
@@ -68,7 +70,7 @@ const DashboardPage = () => {
       const res = await withTimeout(
         fetch(
           `/api/analytics?start_date=${encodeURIComponent(range.start)}&end_date=${encodeURIComponent(range.end)}`,
-          { credentials: "include" }
+          { credentials: "include", cache: "no-store" }
         ),
         FETCH_MS
       );
@@ -92,6 +94,8 @@ const DashboardPage = () => {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load analytics");
       setData(emptyAnalytics());
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -107,8 +111,8 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <h1 className="text-3xl font-bold text-foreground">{t("dashboard.title")}</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{t("dashboard.title")}</h1>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
@@ -170,6 +174,11 @@ const DashboardPage = () => {
         </div>
       )}
 
+      {loading ? (
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {t("common.loading")}
+        </p>
+      ) : null}
       {error ? (
         <p className="text-destructive">{error}</p>
       ) : (

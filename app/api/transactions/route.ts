@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getAuthenticatedSupabase } from "@/lib/auth-api";
+import { json } from "@/lib/http";
 
 export async function GET(req: NextRequest) {
   const auth = await getAuthenticatedSupabase();
@@ -15,9 +16,9 @@ export async function GET(req: NextRequest) {
   if (customerId) query = query.eq("customer_id", customerId);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json(data);
+  return json(data);
 }
 
 export async function POST(req: NextRequest) {
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
   const { customer_id, type, amount, payment_mode, date, note } = await req.json();
 
   if (!customer_id || !type || amount == null || !payment_mode) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    return json({ error: "Missing required fields" }, { status: 400 });
   }
 
   const { data, error } = await auth.supabase
@@ -45,6 +46,6 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
+  if (error) return json({ error: error.message }, { status: 500 });
+  return json(data, { status: 201 });
 }

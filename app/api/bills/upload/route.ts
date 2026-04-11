@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 import { getAuthenticatedSupabase } from "@/lib/auth-api";
+import { json } from "@/lib/http";
 import {
   BillPdfDocument,
   type BillPdfLine,
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   const { customer_id, start_date, end_date } = await req.json();
   if (!customer_id || !start_date || !end_date) {
-    return NextResponse.json(
+    return json(
       { error: "customer_id, start_date, and end_date are required" },
       { status: 400 }
     );
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (cErr || !customer) {
-    return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+    return json({ error: "Customer not found" }, { status: 404 });
   }
 
   const { data: entries, error: eErr } = await auth.supabase
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
     .order("date", { ascending: true });
 
   if (eErr) {
-    return NextResponse.json({ error: eErr.message }, { status: 500 });
+    return json({ error: eErr.message }, { status: 500 });
   }
 
   const { data: prevEntries, error: peErr } = await auth.supabase
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
     .eq("customer_id", customer_id)
     .lt("date", start_date);
   if (peErr) {
-    return NextResponse.json({ error: peErr.message }, { status: 500 });
+    return json({ error: peErr.message }, { status: 500 });
   }
 
   const { data: transactions, error: tErr } = await auth.supabase
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
     .order("date", { ascending: true });
 
   if (tErr) {
-    return NextResponse.json({ error: tErr.message }, { status: 500 });
+    return json({ error: tErr.message }, { status: 500 });
   }
 
   const { data: prevTransactions, error: ptErr } = await auth.supabase
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
     .eq("customer_id", customer_id)
     .lt("date", start_date);
   if (ptErr) {
-    return NextResponse.json({ error: ptErr.message }, { status: 500 });
+    return json({ error: ptErr.message }, { status: 500 });
   }
 
   const lines: BillPdfLine[] = [];
@@ -152,7 +153,7 @@ export async function POST(req: NextRequest) {
     });
 
   if (upErr) {
-    return NextResponse.json({ error: upErr.message }, { status: 500 });
+    return json({ error: upErr.message }, { status: 500 });
   }
 
   const { data: signed, error: signErr } = await auth.supabase.storage
@@ -160,7 +161,7 @@ export async function POST(req: NextRequest) {
     .createSignedUrl(path, 60 * 60 * 24 * 7);
 
   if (signErr || !signed?.signedUrl) {
-    return NextResponse.json(
+    return json(
       { error: signErr?.message ?? "Could not sign URL" },
       { status: 500 }
     );
@@ -177,7 +178,7 @@ export async function POST(req: NextRequest) {
     console.error("bill_shares insert:", shareErr.message);
   }
 
-  return NextResponse.json({
+  return json({
     signedUrl: signed.signedUrl,
     path,
     bucket,

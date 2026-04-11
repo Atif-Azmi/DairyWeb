@@ -2,9 +2,18 @@ import type { ReactNode } from "react";
 import "../styles/globals.css";
 import ClientI18nProvider from "@/components/i18n/ClientI18nProvider";
 
+import type { Viewport } from "next";
+
 export const metadata = {
   title: "Dairy Management Pro — Shaibya Solutions",
   description: "Modern dairy management system",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

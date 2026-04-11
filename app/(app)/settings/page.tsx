@@ -26,7 +26,7 @@ export default function SettingsPage() {
       setLoadError(null);
       try {
         const res = await withTimeout(
-          fetch("/api/dairy-profile", { credentials: "include" }),
+          fetch("/api/dairy-profile", { credentials: "include", cache: "no-store" }),
           FETCH_MS
         );
         if (res.ok) {
@@ -57,6 +57,7 @@ export default function SettingsPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
+      cache: "no-store",
       body: JSON.stringify({
         dairy_name,
         tagline,
@@ -76,7 +77,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="mx-auto w-full max-w-2xl space-y-6">
       <h1 className="text-3xl font-bold text-foreground">{t("settings.title")}</h1>
       <p className="text-sm text-muted-foreground">
         These details appear on bills and can be reused across the app.

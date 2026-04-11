@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getAuthenticatedSupabase } from "@/lib/auth-api";
+import { json } from "@/lib/http";
 
 function normalizeUuid(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -14,7 +15,7 @@ function normalizeUuid(value: unknown): string | null {
 
 function safeJsonError(message: string, details?: unknown) {
   if (details != null) console.error("[api/entries]", message, details);
-  return NextResponse.json({ error: message }, { status: 400 });
+  return json({ error: message }, { status: 400 });
 }
 
 export async function GET(req: NextRequest) {
@@ -35,10 +36,10 @@ export async function GET(req: NextRequest) {
   const { data, error } = await query;
   if (error) {
     console.error("[api/entries][GET] supabase error", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  return json(data);
 }
 
 export async function POST(req: NextRequest) {
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
     !Number.isFinite(quantity) ||
     !Number.isFinite(price_per_unit)
   ) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    return json({ error: "Missing required fields" }, { status: 400 });
   }
 
   const { data, error } = await auth.supabase
@@ -98,9 +99,9 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error("[api/entries][POST] supabase error", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json(data, { status: 201 });
+  return json(data, { status: 201 });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -188,7 +189,7 @@ export async function PATCH(req: NextRequest) {
 
   if (error) {
     console.error("[api/entries][PATCH] supabase error", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json(data, { status: 200 });
+  return json(data, { status: 200 });
 }

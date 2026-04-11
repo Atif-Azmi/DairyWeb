@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   HomeIcon,
   UserGroupIcon,
@@ -23,21 +24,42 @@ const navigation = [
   { key: "nav.settings", href: "/settings", icon: Cog6ToothIcon },
 ];
 
-const Sidebar = () => {
+type SidebarProps = {
+  mobileOpen?: boolean;
+  onNavigate?: () => void;
+};
+
+const Sidebar = ({ mobileOpen = false, onNavigate }: SidebarProps) => {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useI18n();
+  const [signingOut, setSigningOut] = useState(false);
 
   const signOut = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.replace("/login");
-    router.refresh();
+    setSigningOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      await router.replace("/login");
+      router.refresh();
+    } finally {
+      setSigningOut(false);
+    }
   };
 
   return (
-    <aside className="w-64 flex-shrink-0 bg-gradient-to-b from-primary to-primary-muted text-primary-foreground border-r border-primary/30 h-screen flex flex-col shadow-card">
+    <aside
+      className={`
+        z-50 flex h-screen w-[min(18rem,85vw)] flex-shrink-0 flex-col border-r border-primary/30 bg-gradient-to-b from-primary to-primary-muted text-primary-foreground shadow-card
+        fixed inset-y-0 left-0 transform transition-transform duration-200 ease-out md:static md:translate-x-0 md:w-64
+        ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+      `}
+    >
       <div className="h-16 flex items-center justify-center border-b border-white/10">
-        <Link href="/dashboard" className="text-xl font-bold tracking-tight">
+        <Link
+          href="/dashboard"
+          onClick={() => onNavigate?.()}
+          className="text-xl font-bold tracking-tight"
+        >
           DairyPro
         </Link>
       </div>
@@ -46,13 +68,14 @@ const Sidebar = () => {
           <Link
             key={item.key}
             href={item.href}
-            className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all ${
+            onClick={() => onNavigate?.()}
+            className={`flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all touch-manipulation ${
               pathname.startsWith(item.href)
                 ? "bg-white/20 text-white shadow-sm"
                 : "text-primary-foreground/85 hover:bg-white/10"
             }`}
           >
-            <item.icon className="h-5 w-5 mr-3 opacity-90" />
+            <item.icon className="mr-3 h-5 w-5 shrink-0 opacity-90" />
             {t(item.key)}
           </Link>
         ))}
@@ -63,8 +86,9 @@ const Sidebar = () => {
         </p>
         <Button
           variant="outline"
-          className="w-full justify-center border-white/30 text-primary-foreground hover:bg-white/10 bg-transparent"
+          className="min-h-[44px] w-full touch-manipulation justify-center border-white/30 bg-transparent text-primary-foreground hover:bg-white/10"
           onClick={signOut}
+          disabled={signingOut}
         >
           <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
           {t("common.signOut")}

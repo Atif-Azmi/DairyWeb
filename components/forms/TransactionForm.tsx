@@ -43,26 +43,29 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     setIsSubmitting(true);
     setError(null);
 
-    const { error: submissionError } = await supabaseClient
-      .from("transactions")
-      .insert([
-        {
-          customer_id: customerId,
-          type,
-          amount: Number(amount),
-          payment_mode: paymentMode,
-          date,
-          note: note.trim() ? note.trim() : null,
-        },
-      ]);
+    try {
+      const { error: submissionError } = await supabaseClient
+        .from("transactions")
+        .insert([
+          {
+            customer_id: customerId,
+            type,
+            amount: Number(amount),
+            payment_mode: paymentMode,
+            date,
+            note: note.trim() ? note.trim() : null,
+          },
+        ]);
 
-    setIsSubmitting(false);
-    if (submissionError) {
-      setError(`Failed to save transaction: ${submissionError.message}`);
-    } else {
-      setAmount("");
-      setNote("");
-      onSuccess();
+      if (submissionError) {
+        setError(`Failed to save transaction: ${submissionError.message}`);
+      } else {
+        setAmount("");
+        setNote("");
+        onSuccess();
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
