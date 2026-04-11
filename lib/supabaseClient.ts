@@ -1,9 +1,11 @@
 "use client";
 
-import { createBrowserClient, type SupabaseClient } from "@supabase/ssr";
+import { createBrowserClient } from "@supabase/ssr";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+export type BrowserSupabaseClient = ReturnType<typeof createBrowserClient>;
 
 function missingEnvMessage() {
   return (
@@ -12,21 +14,21 @@ function missingEnvMessage() {
   );
 }
 
-function createNoopSupabase(): SupabaseClient {
+function createNoopSupabase(): BrowserSupabaseClient {
   const err = () => {
     throw new Error(missingEnvMessage());
   };
 
   // Minimal stub so importing this module during `next build` / SSR doesn't crash
   // when public env vars are not available at build time.
-  return new Proxy({} as SupabaseClient, {
+  return new Proxy({} as BrowserSupabaseClient, {
     get() {
       return err;
     },
   });
 }
 
-function createRealSupabase(): SupabaseClient {
+function createRealSupabase(): BrowserSupabaseClient {
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error("[supabaseClient] Missing Supabase public env vars", {
       hasUrl: !!supabaseUrl,
@@ -44,4 +46,4 @@ function createRealSupabase(): SupabaseClient {
 
 // Important: do NOT call createBrowserClient with empty strings at module scope.
 // Vercel builds can prerender client components without your env vars unless you add them.
-export const supabaseClient: SupabaseClient = createRealSupabase();
+export const supabaseClient: BrowserSupabaseClient = createRealSupabase();
