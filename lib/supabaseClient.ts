@@ -17,8 +17,8 @@ function createNoopSupabase(): SupabaseClient {
     throw new Error(missingEnvMessage());
   };
 
-  // Minimal stub so importing this module during `next build` / SSR doesn't crash.
-  // Real pages still need env vars at runtime in the browser.
+  // Minimal stub so importing this module during `next build` / SSR doesn't crash
+  // when public env vars are not available at build time.
   return new Proxy({} as SupabaseClient, {
     get() {
       return err;
@@ -26,35 +26,22 @@ function createNoopSupabase(): SupabaseClient {
   });
 }
 
-let cached: SupabaseClient | null = null;
-
-export function getSupabaseBrowserClient(): SupabaseClient {
-  if (cached) return cached;
-
+function createRealSupabase(): SupabaseClient {
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error("[supabaseClient] Missing Supabase public env vars", {
       hasUrl: !!supabaseUrl,
       hasAnon: !!supabaseAnonKey,
     });
-    cached = createNoopSupabase();
-    return cached;
+    return createNoopSupabase();
   }
 
-  // During prerender/build there is no browser; avoid constructing a real client unnecessarily.
   if (typeof window === "undefined") {
-    cached = createNoopSupabase();
-    return cached;
+    return createNoopSupabase();
   }
 
-  cached = createBrowserClient(supabaseUrl, supabaseAnonKey);
-  return cached;
+  return createBrowserClient(supabaseUrl, supabaseAnonKey);
 }
 
-// Back-compat for existing imports: lazily resolves to a real client in the browser.
-export const supabaseClient: SupabaseClient = new Proxy({} as SupabaseClient, {
-  get(_target, prop) {
-    const client = getSupabaseBrowserClient();
-    const value = (client as any)[prop];
-    return typeof value === "function" ? value.bind(client) : value;
-  },
-});
+// Important: do NOT call createBrowserClient with empty strings at module scope.
+// Vercel builds can prerender client components without your env vars unless you add them.
+export const supabaseClient: SupabaseClient = createRealSupabase();
