@@ -1,6 +1,6 @@
 -- Relax product name constraint so the app can add custom products (not only milk/ghee).
 -- Safe to re-run: drops old/new constraint names then applies one CHECK.
-
+-- Depends: 2026040501_initial_core_tables.sql
 ALTER TABLE products DROP CONSTRAINT IF EXISTS products_name_check;
 ALTER TABLE products DROP CONSTRAINT IF EXISTS products_name_format;
 
