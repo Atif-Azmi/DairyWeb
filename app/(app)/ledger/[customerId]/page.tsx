@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
 import TransactionForm from "@/components/forms/TransactionForm";
+import EntryForm from "@/components/forms/EntryForm";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
@@ -11,7 +12,12 @@ import { withTimeout } from "@/lib/withTimeout";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 
 const FETCH_MS = 18_000;
-import EntryForm from "@/components/forms/EntryForm";
+
+function signedBalanceClass(balance: number) {
+  if (balance > 0) return "text-destructive";
+  if (balance < 0) return "text-emerald-700";
+  return "text-muted-foreground";
+}
 
 interface LedgerItem {
   id: string;
@@ -316,12 +322,8 @@ const LedgerPage = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card title="Previous Balance">
-          <p
-            className={`text-2xl font-semibold ${
-              summary.openingBalance > 0 ? "text-destructive" : "text-emerald-700"
-            }`}
-          >
-            ₹{Math.abs(summary.openingBalance).toFixed(2)}
+          <p className={`text-2xl font-semibold ${signedBalanceClass(summary.openingBalance)}`}>
+            ₹{summary.openingBalance.toFixed(2)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             Before this month
@@ -335,18 +337,16 @@ const LedgerPage = () => {
             ₹{summary.periodPaid.toFixed(2)}
           </p>
         </Card>
-        <Card title="Net Payable (This Month)">
+        <Card title={lang === "hi" ? "शेष बैलेंस" : "Remaining Balance"}>
           <p
-            className={`text-2xl font-semibold ${
-              summary.periodClosingBalance > 0 ? "text-destructive" : "text-emerald-700"
-            }`}
+            className={`text-2xl font-semibold ${signedBalanceClass(summary.periodClosingBalance)}`}
           >
-            ₹{Math.abs(summary.periodClosingBalance).toFixed(2)}
+            ₹{summary.periodClosingBalance.toFixed(2)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             {lang === "hi"
               ? "पिछला बैलेंस + इस महीने की बिक्री - भुगतान"
-              : "Previous balance + this month sales - paid"}
+              : "Previous balance + this month sales − paid"}
           </p>
         </Card>
       </div>
@@ -361,12 +361,8 @@ const LedgerPage = () => {
           </p>
         </Card>
         <Card title="Final Balance (All Time)">
-          <p
-            className={`text-2xl font-semibold ${
-              summary.finalBalance > 0 ? "text-destructive" : "text-emerald-700"
-            }`}
-          >
-            ₹{Math.abs(summary.finalBalance).toFixed(2)}
+          <p className={`text-2xl font-semibold ${signedBalanceClass(summary.finalBalance)}`}>
+            ₹{summary.finalBalance.toFixed(2)}
           </p>
         </Card>
       </div>
@@ -403,7 +399,9 @@ const LedgerPage = () => {
                 <td className="px-4 py-2 text-right text-emerald-700">
                   {item.credit > 0 ? `₹${item.credit.toFixed(2)}` : "—"}
                 </td>
-                <td className="px-4 py-2 text-right font-medium">
+                <td
+                  className={`px-4 py-2 text-right font-medium ${signedBalanceClass(item.balance)}`}
+                >
                   ₹{item.balance.toFixed(2)}
                 </td>
                 <td className="px-4 py-2 text-center">
