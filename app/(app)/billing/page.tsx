@@ -48,21 +48,27 @@ const BillingPage = () => {
     totalPaid: 0,
     finalBalance: 0,
   });
+  const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
+
+  const fetchCustomers = useCallback(async () => {
+    const { data: cust, error: cErr } = await withTimeout(
+      supabaseClient.from("customers").select("id, name, phone"),
+      FETCH_MS
+    );
+    if (cErr) {
+      setBootstrapError(cErr.message);
+      setCustomers([]);
+      return false;
+    }
+    setCustomers(cust || []);
+    return true;
+  }, []);
 
   useEffect(() => {
     const load = async () => {
       setBootstrapError(null);
       try {
-        const { data: cust, error: cErr } = await withTimeout(
-          supabaseClient.from("customers").select("id, name, phone"),
-          FETCH_MS
-        );
-        if (cErr) {
-          setBootstrapError(cErr.message);
-          setCustomers([]);
-        } else {
-          setCustomers(cust || []);
-        }
+        await fetchCustomers();
         const { data: prof, error: pErr } = await withTimeout(
           supabaseClient.from("dairy_profile").select("*").eq("id", 1).maybeSingle(),
           FETCH_MS
@@ -76,8 +82,16 @@ const BillingPage = () => {
         setBootstrapError(e instanceof Error ? e.message : "Could not load billing data");
       }
     };
-    load();
-  }, []);
+    void load();
+  }, [fetchCustomers]);
+
+  const handleNewCustomerSaved = async (result?: { id: string }) => {
+    setIsAddCustomerOpen(false);
+    const ok = await fetchCustomers();
+    if (ok && result?.id) {
+      setSelectedCustomer(result.id);
+    }
+  };
 
   const customerName = useMemo(
     () => customers.find((c) => c.id === selectedCustomer)?.name ?? "",
@@ -227,6 +241,14 @@ const BillingPage = () => {
 
   return (
     <div className="space-y-6">
+      <Modal
+        isOpen={isAddCustomerOpen}
+        onClose={() => setIsAddCustomerOpen(false)}
+        title={t("billing.addNewCustomer")}
+      >
+        <CustomerForm customer={null} onSuccess={handleNewCustomerSaved} />
+      </Modal>
+
       <h1 className="text-3xl font-bold text-foreground">{t("billing.title")}</h1>
       {lines.length > 0 && customerName ? (
         <div className="rounded-xl border border-border bg-white/90 px-4 py-3">
@@ -281,7 +303,7 @@ const BillingPage = () => {
             No customers yet. Add customers first, then you can generate bills here.
           </p>
         ) : null}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end print:hidden">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end print:hidden">
           <Combobox
             label={lang === "hi" ? "ग्राहक" : "Customer"}
             value={selectedCustomer}
@@ -307,8 +329,23 @@ const BillingPage = () => {
             onChange={(e) => setEndDate(e.target.value)}
             required
           />
-          <Button onClick={handleGenerateBill} disabled={loading}>
+          <Button
+            type="button"
+            className="min-h-[44px] touch-manipulation"
+            onClick={() => void handleGenerateBill()}
+            disabled={loading}
+          >
             {loading ? (lang === "hi" ? "बन रहा है…" : "Generating…") : lang === "hi" ? "बिल बनाएं" : "Generate bill"}
+          </Button>
+        </div>
+        <div className="mt-4 print:hidden">
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-[44px] w-full touch-manipulation sm:w-auto"
+            onClick={() => setIsAddCustomerOpen(true)}
+          >
+            {t("billing.addNewCustomer")}
           </Button>
         </div>
       </Card>
