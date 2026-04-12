@@ -4,9 +4,11 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 
+export type CustomerSaveResult = { id: string };
+
 interface CustomerFormProps {
   customer: any | null; // Pass null for new customer
-  onSuccess: () => void;
+  onSuccess: (result?: CustomerSaveResult) => void;
 }
 
 const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSuccess }) => {
@@ -14,9 +16,6 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSuccess }) => {
   const [name, setName] = useState(customer?.name || "");
   const [phone, setPhone] = useState(customer?.phone || "");
   const [address, setAddress] = useState(customer?.address || "");
-  const [defaultMilkQty, setDefaultMilkQty] = useState(
-    customer?.default_milk_qty || ""
-  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const normalizedPhone = useMemo(() => phone.replace(/\D/g, ""), [phone]);
@@ -56,27 +55,34 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSuccess }) => {
         name: name.trim(),
         phone: normalizedPhone || null,
         address,
-        default_milk_qty: Number(defaultMilkQty) || null,
       };
 
-      const { error: submissionError } = customer?.id
-        ? await supabaseClient
-            .from("customers")
-            .update(customerData)
-            .eq("id", customer.id)
-        : await supabaseClient.from("customers").insert([customerData]);
-
-      if (submissionError) {
-        console.error("Error saving customer:", submissionError);
-        setError(submissionError.message || "Failed to save customer. Please try again.");
+      if (customer?.id) {
+        const { error: submissionError } = await supabaseClient
+          .from("customers")
+          .update(customerData)
+          .eq("id", customer.id);
+        if (submissionError) {
+          console.error("Error saving customer:", submissionError);
+          setError(submissionError.message || "Failed to save customer. Please try again.");
+        } else {
+          onSuccess({ id: customer.id });
+        }
       } else {
-        if (!customer?.id) {
+        const { data: created, error: submissionError } = await supabaseClient
+          .from("customers")
+          .insert([customerData])
+          .select("id")
+          .single();
+        if (submissionError) {
+          console.error("Error saving customer:", submissionError);
+          setError(submissionError.message || "Failed to save customer. Please try again.");
+        } else {
           setName("");
           setPhone("");
           setAddress("");
-          setDefaultMilkQty("");
+          onSuccess(created?.id ? { id: created.id } : undefined);
         }
-        onSuccess();
       }
     } finally {
       setIsSubmitting(false);
@@ -114,15 +120,6 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSuccess }) => {
         id="address"
         value={address}
         onChange={(e) => setAddress(e.target.value)}
-        disabled={isSubmitting}
-      />
-      <Input
-        label={t("form.defaultMilkQty")}
-        id="defaultMilkQty"
-        type="number"
-        step="0.1"
-        value={defaultMilkQty}
-        onChange={(e) => setDefaultMilkQty(e.target.value)}
         disabled={isSubmitting}
       />
       <div className="flex justify-end">

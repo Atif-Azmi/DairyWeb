@@ -96,12 +96,22 @@ const EntryForm = ({
         setError("Please enter a valid quantity.");
         return;
       }
+      if (numericQuantity < 0) {
+        setError(
+          lang === "hi" ? "मात्रा ऋणात्मक नहीं हो सकती।" : "Quantity cannot be negative."
+        );
+        return;
+      }
       if (numericQuantity <= 0) {
         setError("Quantity must be greater than 0.");
         return;
       }
       if (!Number.isFinite(numericPrice)) {
         setError("Please enter a valid price.");
+        return;
+      }
+      if (numericPrice < 0) {
+        setError(lang === "hi" ? "कीमत ऋणात्मक नहीं हो सकती।" : "Price cannot be negative.");
         return;
       }
       if (numericPrice <= 0) {

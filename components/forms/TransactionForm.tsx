@@ -36,8 +36,17 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || Number(amount) <= 0) {
+    const amt = Number(amount);
+    if (!Number.isFinite(amt)) {
       setError("Please enter a valid amount.");
+      return;
+    }
+    if (amt < 0) {
+      setError(lang === "hi" ? "राशि ऋणात्मक नहीं हो सकती।" : "Amount cannot be negative.");
+      return;
+    }
+    if (amt <= 0) {
+      setError("Please enter an amount greater than zero.");
       return;
     }
     setIsSubmitting(true);

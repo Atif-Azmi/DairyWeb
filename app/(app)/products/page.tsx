@@ -192,31 +192,44 @@ const ProductForm = ({
     setIsSubmitting(true);
     setError(null);
 
-    const normalized = name.trim().toLowerCase();
-    if (!normalized) {
-      setError("Enter a product name");
-      setIsSubmitting(false);
-      return;
-    }
-    const payload = { name: normalized, default_rate: Number(rate), unit };
-    const { error } = product
-      ? await supabaseClient.from("products").update(payload).eq("id", product.id)
-      : await supabaseClient.from("products").insert([payload]);
-
-    if (error) {
-      if (error.message.includes("products_name_check")) {
-        setError(
-          lang === "hi"
-            ? "Database me purana constraint active hai. SQL script `scripts/2026040504_relax_products_name.sql` Supabase SQL editor me run karein."
-            : "Old database constraint is still active. Run `scripts/2026040504_relax_products_name.sql` in Supabase SQL editor."
-        );
-      } else {
-        setError(error.message);
+    try {
+      const normalized = name.trim().toLowerCase();
+      if (!normalized) {
+        setError("Enter a product name");
+        return;
       }
-    } else {
-      onSuccess();
+      const rateNum = Number(rate);
+      if (!Number.isFinite(rateNum) || rateNum < 0) {
+        setError(
+          rateNum < 0
+            ? lang === "hi"
+              ? "रेट ऋणात्मक नहीं हो सकती।"
+              : "Rate cannot be negative."
+            : "Enter a valid rate (zero or positive)."
+        );
+        return;
+      }
+      const payload = { name: normalized, default_rate: rateNum, unit };
+      const { error } = product
+        ? await supabaseClient.from("products").update(payload).eq("id", product.id)
+        : await supabaseClient.from("products").insert([payload]);
+
+      if (error) {
+        if (error.message.includes("products_name_check")) {
+          setError(
+            lang === "hi"
+              ? "Database me purana constraint active hai. SQL script `scripts/2026040504_relax_products_name.sql` Supabase SQL editor me run karein."
+              : "Old database constraint is still active. Run `scripts/2026040504_relax_products_name.sql` in Supabase SQL editor."
+          );
+        } else {
+          setError(error.message);
+        }
+      } else {
+        onSuccess();
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   return (
