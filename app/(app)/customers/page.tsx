@@ -171,18 +171,23 @@ const CustomersPage = () => {
         ) : null}
       </Modal>
 
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-foreground">{t("customers.title")}</h1>
-        <Button type="button" onClick={openModalForNew}>
+      <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{t("customers.title")}</h1>
+      <div className="flex max-w-xl flex-col gap-3">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by customer name or phone"
+          className="h-11 w-full rounded-md border border-border bg-white/90 px-3 py-2 text-base sm:text-sm touch-manipulation"
+          aria-label="Search customers"
+        />
+        <Button
+          type="button"
+          onClick={openModalForNew}
+          className="h-12 min-h-[48px] w-full text-base font-semibold sm:w-auto sm:self-start sm:px-8 touch-manipulation"
+        >
           {t("customers.add")}
         </Button>
       </div>
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search by customer name or phone"
-        className="h-10 w-full max-w-md rounded-md border border-border bg-white/90 px-3 py-2 text-sm"
-      />
 
       <Card title={lang === "hi" ? "सभी ग्राहक" : "All Customers"}>
         {loadError && (

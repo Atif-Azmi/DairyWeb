@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import Modal from "@/components/ui/Modal";
+import CustomerForm from "@/components/forms/CustomerForm";
 import BillStatement, { type BillLine } from "@/components/bills/BillStatement";
 import { withTimeout } from "@/lib/withTimeout";
 import { useI18n } from "@/components/i18n/LanguageProvider";
