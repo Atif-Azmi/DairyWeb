@@ -17,8 +17,8 @@ interface DailyEntry {
   shift: string;
   quantity: number;
   total_amount: number;
-  customers: { name: string } | null;
-  products: { name: string } | null;
+  daily_customers: { name: string } | null;
+  daily_products: { name: string } | null;
 }
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
@@ -63,8 +63,8 @@ const EntriesPage = () => {
             .from("daily_entries" as any)
             .select(
               debouncedSearch
-                ? "id, date, shift, quantity, total_amount, customers!inner(name), products(name)"
-                : "id, date, shift, quantity, total_amount, customers(name), products(name)",
+                ? "id, date, shift, quantity, total_amount, daily_customers!inner(name), daily_products(name)"
+                : "id, date, shift, quantity, total_amount, daily_customers(name), daily_products(name)",
               { count: "exact" }
             )
             .order("date", { ascending: false })
@@ -75,7 +75,7 @@ const EntriesPage = () => {
 
           if (debouncedSearch) {
             // Force inner join so non-matching / missing customers disappear from results
-            q = q.ilike("customers.name", `%${debouncedSearch}%`);
+            q = q.ilike("daily_customers.name", `%${debouncedSearch}%`);
           }
 
           return q;
@@ -287,9 +287,9 @@ const EntriesPage = () => {
                       {new Date(entry.date).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-2 font-medium">
-                      {entry.customers?.name ?? "—"}
+                      {entry.daily_customers?.name ?? "—"}
                     </td>
-                    <td className="px-4 py-2">{entry.products?.name ?? "—"}</td>
+                    <td className="px-4 py-2">{entry.daily_products?.name ?? "—"}</td>
                     <td className="px-4 py-2 capitalize">{entry.shift}</td>
                     <td className="px-4 py-2 text-right">{entry.quantity}</td>
                     <td className="px-4 py-2 text-right">
