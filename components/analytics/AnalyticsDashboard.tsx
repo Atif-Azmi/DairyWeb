@@ -4,10 +4,9 @@ import Card from "@/components/ui/Card";
 export interface AnalyticsDashboardData {
   totalSales: number;
   totalMilk: number;
-  totalGheeKg?: number;
   totalPaid: number;
   outstandingBalance: number;
-  productSales?: { milk: number; ghee: number };
+  productSales?: Record<string, number>;
   dailySales?: Record<string, number>;
   topCustomers?: { name: string; total_purchase: number }[];
 }
@@ -30,6 +29,8 @@ const AnalyticsDashboard: React.FC<Props> = ({ data }) => {
     : [];
   const maxDay = Math.max(1, ...daily.map(([, v]) => v));
 
+  const productEntries = data.productSales ? Object.entries(data.productSales) : [];
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -38,9 +39,6 @@ const AnalyticsDashboard: React.FC<Props> = ({ data }) => {
           title="Milk (liters)"
           value={data.totalMilk.toFixed(2)}
         />
-        {(data.totalGheeKg ?? 0) > 0 && (
-          <StatCard title="Ghee (kg)" value={(data.totalGheeKg ?? 0).toFixed(2)} />
-        )}
         <StatCard
           title="Payments received"
           value={`₹${data.totalPaid.toFixed(2)}`}
@@ -51,18 +49,15 @@ const AnalyticsDashboard: React.FC<Props> = ({ data }) => {
         />
       </div>
 
-      {data.productSales && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card title="Sales — Milk">
-            <p className="text-xl font-semibold text-primary">
-              ₹{data.productSales.milk.toFixed(2)}
-            </p>
-          </Card>
-          <Card title="Sales — Ghee">
-            <p className="text-xl font-semibold text-primary">
-              ₹{data.productSales.ghee.toFixed(2)}
-            </p>
-          </Card>
+      {productEntries.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {productEntries.map(([name, amount]) => (
+            <Card key={name} title={`Sales — ${name.charAt(0).toUpperCase() + name.slice(1)}`}>
+              <p className="text-xl font-semibold text-primary">
+                ₹{amount.toFixed(2)}
+              </p>
+            </Card>
+          ))}
         </div>
       )}
 
