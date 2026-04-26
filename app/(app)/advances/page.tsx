@@ -34,8 +34,15 @@ export default function AdvancesPage() {
       p_end: "2100-01-01",
     });
 
+    const { data: phoneData } = await supabaseClient.from("customers").select("id, phone");
+    const { data: profile } = await supabaseClient.from("dairy_profile").select("dairy_name").eq("id", 1).maybeSingle();
+
     if (data) {
-      setCustomers(data as CustomerBalance[]);
+      const merged = (data as CustomerBalance[]).map(c => {
+        const p = phoneData?.find(pd => pd.id === c.customer_id);
+        return { ...c, phone: p?.phone, dairy_name: profile?.dairy_name || "Dairy" };
+      });
+      setCustomers(merged);
     }
     setIsLoading(false);
   }, []);
@@ -49,6 +56,25 @@ export default function AdvancesPage() {
     setType(customer.balance > 0 ? "payment" : "advance"); // Default based on balance
     setAmount(Math.abs(customer.balance).toString() || "");
     setIsModalOpen(true);
+  };
+
+  const handleRemindWhatsApp = (customer: CustomerBalance) => {
+    if (!customer.phone) {
+      alert(lang === "hi" ? "इस ग्राहक का फ़ोन नंबर मौजूद नहीं है।" : "Phone number missing for this customer.");
+      return;
+    }
+    const text = `Dear ${customer.name},\n\nGreetings from *${(customer as any).dairy_name}*! 🥛\n\nWe hope you're enjoying our dairy products! This is a friendly reminder regarding your pending payment of ₹${customer.balance.toFixed(2)}.\n\nPlease clear the dues at your earliest convenience. Thank you!`;
+    
+    let phoneStr = customer.phone.replace(/\D/g, "");
+    if (phoneStr && phoneStr.length === 10) {
+      phoneStr = "91" + phoneStr;
+    }
+
+    const wa = phoneStr 
+      ? `https://wa.me/${phoneStr}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+      
+    window.open(wa, "_blank", "noopener,noreferrer");
   };
 
   const handleTransaction = async (e: React.FormEvent) => {
@@ -102,11 +128,14 @@ export default function AdvancesPage() {
               ) : (
                 customers.map((c) => (
                   <tr key={c.customer_id} className="border-b border-border hover:bg-secondary/40 transition-colors">
-                    <td className="px-4 py-3 font-medium">{c.name}</td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium uppercase">{c.name}</p>
+                      {c.phone && <p className="text-xs text-muted-foreground mt-0.5">📞 {c.phone}</p>}
+                    </td>
                     <td className="px-4 py-3">
                       {c.balance < 0 ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          Advance Paid to us
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                          Advance Paid
                         </span>
                       ) : c.balance > 0 ? (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
@@ -118,13 +147,20 @@ export default function AdvancesPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right font-bold">
+                    <td className={`px-4 py-3 text-right font-bold ${c.balance > 0 ? "text-amber-700" : c.balance < 0 ? "text-emerald-700" : ""}`}>
                       ₹{Math.abs(c.balance).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Button size="sm" onClick={() => openModal(c)}>
-                        Add Entry
-                      </Button>
+                      <div className="flex justify-end gap-2 flex-wrap">
+                        {c.balance > 0 && (
+                          <Button size="sm" variant="outline" className="text-primary hover:bg-primary/10 border-primary/20" onClick={() => handleRemindWhatsApp(c)}>
+                            Remind
+                          </Button>
+                        )}
+                        <Button size="sm" onClick={() => openModal(c)}>
+                          Add Entry
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))

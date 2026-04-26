@@ -218,7 +218,10 @@ const BillingPage = () => {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Upload failed");
-      setShareUrl(json.signedUrl);
+      
+      const urlToShare = json.shortUrl || json.signedUrl;
+
+      setShareUrl(urlToShare);
       setUiMessage(`PDF uploaded to bucket "${json.bucket || bucketName}". Share link ready.`);
     } catch (e) {
       setUiError(e instanceof Error ? e.message : "Could not create share link");
@@ -240,7 +243,7 @@ const BillingPage = () => {
 
   const handleShareWhatsApp = () => {
     if (!shareUrl) return;
-    const text = `Bill for ${customerName} (${periodLabel})\n${shareUrl}`;
+    const text = `Dear ${customerName},\n\nGreetings from *${profile?.dairy_name || "Dairy"}*! 🥛\n\nPlease find your bill for the period ${periodLabel} linked below.\n\nYour net payable amount is: *₹${totals.finalBalance.toFixed(2)}*\n\n📄 *Download your bill here:*\n${shareUrl}\n\nThank you for choosing us!`;
     
     // Clean phone number (remove spaces, dashes, etc.)
     let phoneStr = customerPhone.replace(/\D/g, "");
