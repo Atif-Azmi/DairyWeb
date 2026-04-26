@@ -14,10 +14,9 @@ const FETCH_MS = 18_000;
 const emptyAnalytics = (): AnalyticsDashboardData => ({
   totalSales: 0,
   totalMilk: 0,
-  totalGheeKg: 0,
   totalPaid: 0,
   outstandingBalance: 0,
-  productSales: { milk: 0, ghee: 0 },
+  productSales: {},
   dailySales: {},
   topCustomers: [],
 });
@@ -84,7 +83,6 @@ const DashboardPage = () => {
       setData({
         totalSales: Number(json.totalSales),
         totalMilk: Number(json.totalMilk),
-        totalGheeKg: Number(json.totalGheeKg),
         totalPaid: Number(json.totalPaid),
         outstandingBalance: Number(json.outstandingBalance),
         productSales: json.productSales,

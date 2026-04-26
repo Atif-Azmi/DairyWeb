@@ -12,6 +12,8 @@ interface CustomerBalance {
   customer_id: string;
   name: string;
   balance: number;
+  phone?: string | null;
+  dairy_name?: string;
 }
 
 export default function AdvancesPage() {
@@ -207,6 +209,7 @@ export default function AdvancesPage() {
             </div>
 
             <Input
+              id="amount"
               label="Amount"
               type="number"
               step="0.01"

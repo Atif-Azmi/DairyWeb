@@ -41,10 +41,9 @@ export async function GET(req: NextRequest) {
 
     let totalSales = 0;
     let totalMilk = 0;
-    let totalGheeKg = 0;
     let totalPaid = 0;
     const dailySales: Record<string, number> = {};
-    const productSales = { milk: 0, ghee: 0 };
+    const productSales: Record<string, number> = {};
     const customerSales: Record<string, number> = {};
 
     const { data: custRows } = await auth.supabase
@@ -56,7 +55,7 @@ export async function GET(req: NextRequest) {
       const amount = Number(e.total_amount || 0);
       const qty = Number(e.quantity || 0);
       const dateKey = e.date;
-      const prodName = productMap.get(e.product_id);
+      const prodName = productMap.get(e.product_id) || "Unknown";
 
       totalSales += amount;
       dailySales[dateKey] = (dailySales[dateKey] || 0) + amount;
@@ -66,12 +65,9 @@ export async function GET(req: NextRequest) {
         customerSales[cname] = (customerSales[cname] || 0) + amount;
       }
 
-      if (prodName === "milk") {
+      productSales[prodName] = (productSales[prodName] || 0) + amount;
+      if (prodName.toLowerCase() === "milk") {
         totalMilk += qty;
-        productSales.milk += amount;
-      } else if (prodName === "ghee") {
-        totalGheeKg += qty;
-        productSales.ghee += amount;
       }
     }
 
@@ -91,7 +87,6 @@ export async function GET(req: NextRequest) {
     return json({
       totalSales,
       totalMilk,
-      totalGheeKg,
       totalPaid,
       outstandingBalance,
       dailySales,
