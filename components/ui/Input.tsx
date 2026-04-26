@@ -10,14 +10,14 @@ const Input: React.FC<InputProps> = ({ label, id, className, ...props }) => {
     <div>
       <label
         htmlFor={id}
-        className="block text-sm font-medium text-foreground/80 mb-1"
+        className="block text-sm font-semibold text-slate-700 mb-1"
       >
         {label}
         {props.required ? <span className="text-destructive ml-1">*</span> : null}
       </label>
       <input
         id={id}
-        className={`flex h-10 w-full rounded-md border border-border bg-white/80 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+        className={`flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-50 ${className}`}
         {...props}
       />
     </div>
