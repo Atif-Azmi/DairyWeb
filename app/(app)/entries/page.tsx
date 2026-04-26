@@ -114,7 +114,7 @@ const EntriesPage = () => {
         }
 
         const { data: customersData, error: cErr } = await withTimeout(
-          supabaseClient.from("customers").select("id, name"),
+          supabaseClient.from("dairy_customers" as any).select("id, name"),
           FETCH_MS
         );
         const { data: productsData, error: pErr } = await withTimeout(
@@ -129,7 +129,7 @@ const EntriesPage = () => {
           return;
         }
 
-        setCustomers(customersData || []);
+        setCustomers((customersData as any) || []);
         setProducts(productsData || []);
         const entryErr = await fetchEntries();
         if (entryErr) {

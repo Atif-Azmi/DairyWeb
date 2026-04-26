@@ -37,14 +37,14 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSuccess }) => {
     try {
       if (normalizedPhone) {
         let existsQuery = supabaseClient
-          .from("customers")
+          .from("dairy_customers" as any)
           .select("id, name, phone")
           .eq("phone", normalizedPhone)
           .limit(1);
         if (customer?.id) {
           existsQuery = existsQuery.neq("id", customer.id);
         }
-        const { data: existing } = await existsQuery.maybeSingle();
+        const { data: existing } = await existsQuery.maybeSingle() as { data: any | null };
         if (existing) {
           setError(`Phone already exists for customer "${existing.name}".`);
           return;
@@ -59,8 +59,8 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSuccess }) => {
 
       if (customer?.id) {
         const { error: submissionError } = await supabaseClient
-          .from("customers")
-          .update(customerData)
+          .from("dairy_customers" as any)
+          .update(customerData as any)
           .eq("id", customer.id);
         if (submissionError) {
           console.error("Error saving customer:", submissionError);
@@ -70,10 +70,10 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSuccess }) => {
         }
       } else {
         const { data: created, error: submissionError } = await supabaseClient
-          .from("customers")
-          .insert([customerData])
+          .from("dairy_customers" as any)
+          .insert([customerData] as any)
           .select("id")
-          .single();
+          .single() as { data: any | null; error: any };
         if (submissionError) {
           console.error("Error saving customer:", submissionError);
           setError(submissionError.message || "Failed to save customer. Please try again.");

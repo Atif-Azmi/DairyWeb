@@ -47,8 +47,8 @@ export async function GET(req: NextRequest) {
     const customerSales: Record<string, number> = {};
 
     const { data: custRows } = await auth.supabase
-      .from("customers")
-      .select("id, name");
+      .from("dairy_customers" as any)
+      .select("id, name") as { data: any[] | null };
     const nameById = new Map((custRows || []).map((c) => [c.id, c.name]));
 
     for (const e of entries || []) {
