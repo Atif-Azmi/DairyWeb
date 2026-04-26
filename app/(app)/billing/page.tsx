@@ -48,6 +48,7 @@ const BillingPage = () => {
     totalPaid: 0,
     finalBalance: 0,
   });
+  const [isBillGenerated, setIsBillGenerated] = useState(false);
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
 
   const fetchCustomers = useCallback(async () => {
@@ -114,6 +115,7 @@ const BillingPage = () => {
     setShareUrl(null);
     setUiError(null);
     setUiMessage(null);
+    setIsBillGenerated(false);
 
     const { data: prevEntries } = await supabaseClient
       .from("entries")
@@ -194,6 +196,7 @@ const BillingPage = () => {
       totalPaid,
       finalBalance,
     });
+    setIsBillGenerated(true);
     setUiMessage("Bill generated.");
     setLoading(false);
   };
@@ -230,10 +233,26 @@ const BillingPage = () => {
     await navigator.clipboard.writeText(shareUrl);
     setUiMessage("Link copied to clipboard.");
   };
+  const customerPhone = useMemo(
+    () => customers.find((c) => c.id === selectedCustomer)?.phone ?? "",
+    [customers, selectedCustomer]
+  );
+
   const handleShareWhatsApp = () => {
     if (!shareUrl) return;
     const text = `Bill for ${customerName} (${periodLabel})\n${shareUrl}`;
-    const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    
+    // Clean phone number (remove spaces, dashes, etc.)
+    let phoneStr = customerPhone.replace(/\D/g, "");
+    // If it's a 10 digit Indian number, prefix with 91 automatically
+    if (phoneStr && phoneStr.length === 10) {
+      phoneStr = "91" + phoneStr;
+    }
+
+    const wa = phoneStr 
+      ? `https://wa.me/${phoneStr}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+      
     window.open(wa, "_blank", "noopener,noreferrer");
   };
 
@@ -250,7 +269,7 @@ const BillingPage = () => {
       </Modal>
 
       <h1 className="text-3xl font-bold text-foreground">{t("billing.title")}</h1>
-      {lines.length > 0 && customerName ? (
+      {isBillGenerated && customerName ? (
         <div className="rounded-xl border border-border bg-white/90 px-4 py-3">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
             <div>
@@ -350,7 +369,7 @@ const BillingPage = () => {
         </div>
       </Card>
 
-      {lines.length > 0 && customerName && (
+      {isBillGenerated && customerName && (
         <>
           <div className="flex flex-wrap gap-2 print:hidden">
             <Button variant="outline" onClick={handlePrint}>

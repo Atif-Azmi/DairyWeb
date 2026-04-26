@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS transactions CASCADE;
 DROP TABLE IF EXISTS dairy_profile CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS customers CASCADE;
+DROP TABLE IF EXISTS retail_sales CASCADE;
 
 CREATE TABLE customers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -83,6 +84,18 @@ CREATE TABLE bill_shares (
 );
 
 CREATE INDEX idx_bill_shares_customer ON bill_shares(customer_id, period_start, period_end);
+
+CREATE TABLE retail_sales (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    product_id INT NOT NULL REFERENCES products(id),
+    quantity NUMERIC(10,3) NOT NULL CHECK (quantity >= 0),
+    total_amount NUMERIC(12,2) NOT NULL,
+    payment_mode VARCHAR NOT NULL CHECK (payment_mode IN ('cash', 'online', 'upi')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_retail_sales_date ON retail_sales(date);
 
 CREATE OR REPLACE FUNCTION get_top_customers(p_start DATE, p_end DATE)
 RETURNS TABLE (

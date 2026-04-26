@@ -12,6 +12,7 @@
     "create-demo-user": "node scripts/create-demo-user.mjs"
   },
   "dependencies": {
+    "@fontsource/outfit": "^5.2.8",
     "@heroicons/react": "^2.2.0",
     "@react-pdf/renderer": "^4.3.3",
     "@supabase/ssr": "^0.10.0",

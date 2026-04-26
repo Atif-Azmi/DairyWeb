@@ -11,6 +11,8 @@ import {
   CubeIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
+  ShoppingCartIcon,
+  WalletIcon,
 } from "@heroicons/react/24/outline";
 import Button from "@/components/ui/Button";
 import { useI18n } from "@/components/i18n/LanguageProvider";
@@ -19,11 +21,12 @@ const navigation = [
   { key: "nav.dashboard", href: "/dashboard", icon: HomeIcon },
   { key: "nav.customers", href: "/customers", icon: UserGroupIcon },
   { key: "nav.entries", href: "/entries", icon: DocumentChartBarIcon },
+  { key: "nav.retail", href: "/retail", icon: ShoppingCartIcon },
   { key: "nav.products", href: "/products", icon: CubeIcon },
+  { key: "nav.advances", href: "/advances", icon: WalletIcon },
   { key: "nav.billing", href: "/billing", icon: BanknotesIcon },
   { key: "nav.settings", href: "/settings", icon: Cog6ToothIcon },
 ];
-
 type SidebarProps = {
   mobileOpen?: boolean;
   onNavigate?: () => void;
@@ -49,44 +52,49 @@ const Sidebar = ({ mobileOpen = false, onNavigate }: SidebarProps) => {
   return (
     <aside
       className={`
-        z-50 flex h-screen w-[min(18rem,85vw)] flex-shrink-0 flex-col border-r border-primary/30 bg-gradient-to-b from-primary to-primary-muted text-primary-foreground shadow-card
-        fixed inset-y-0 left-0 transform transition-transform duration-200 ease-out md:static md:translate-x-0 md:w-64
-        ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+        z-50 flex flex-shrink-0 flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl border border-slate-200/60 bg-white/80 text-foreground
+        fixed inset-y-0 left-0 transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+        md:sticky md:top-4 md:m-4 md:h-[calc(100vh-2rem)] md:w-64 md:rounded-3xl md:translate-x-0
+        ${mobileOpen ? "translate-x-0 w-[min(18rem,85vw)] h-screen bg-white" : "-translate-x-full md:translate-x-0 w-[min(18rem,85vw)] md:w-64"}
       `}
     >
-      <div className="h-16 flex items-center justify-center border-b border-white/10">
+      <div className="h-20 flex items-center justify-center border-b border-slate-100 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent rounded-t-3xl md:block hidden pointer-events-none" />
         <Link
           href="/dashboard"
           onClick={() => onNavigate?.()}
-          className="text-xl font-bold tracking-tight"
+          className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent z-10 drop-shadow-sm"
         >
           DairyPro
         </Link>
       </div>
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto overflow-x-hidden">
         {navigation.map((item) => (
           <Link
             key={item.key}
             href={item.href}
             onClick={() => onNavigate?.()}
-            className={`flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all touch-manipulation ${
+            className={`group flex min-h-[44px] items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-300 touch-manipulation relative overflow-hidden ${
               pathname.startsWith(item.href)
-                ? "bg-white/20 text-white shadow-sm"
-                : "text-primary-foreground/85 hover:bg-white/10"
+                ? "bg-primary/10 text-primary shadow-[inset_0_1px_1px_rgba(255,255,255,0.5)] ring-1 ring-primary/20"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
             }`}
           >
-            <item.icon className="mr-3 h-5 w-5 shrink-0 opacity-90" />
-            {t(item.key)}
+            {pathname.startsWith(item.href) && (
+              <div className="absolute inset-y-0 left-0 w-1 bg-primary rounded-r-full shadow-[0_0_10px_rgba(5,150,105,0.4)]" />
+            )}
+            <item.icon className={`mr-3 h-5 w-5 shrink-0 transition-transform duration-300 ${pathname.startsWith(item.href) ? "text-primary opacity-100 scale-110" : "opacity-70 group-hover:scale-110 group-hover:text-primary"}`} />
+            <span className="relative z-10">{t(item.key)}</span>
           </Link>
         ))}
       </nav>
-      <div className="p-3 border-t border-white/10">
-        <p className="text-[10px] uppercase tracking-wider text-primary-foreground/60 px-2 mb-2">
+      <div className="p-4 border-t border-slate-100 bg-slate-50/50 md:rounded-b-3xl">
+        <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2 mb-3">
           Shaibya Solutions
         </p>
         <Button
           variant="outline"
-          className="min-h-[44px] w-full touch-manipulation justify-center border-white/30 bg-transparent text-primary-foreground hover:bg-white/10"
+          className="min-h-[44px] w-full touch-manipulation justify-center border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 shadow-sm"
           onClick={signOut}
           disabled={signingOut}
         >

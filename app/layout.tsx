@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
+import { Outfit } from "next/font/google";
 import "../styles/globals.css";
 import ClientI18nProvider from "@/components/i18n/ClientI18nProvider";
+
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 import type { Viewport } from "next";
 
@@ -18,8 +21,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning className="min-h-screen antialiased">
+    <html lang="en" suppressHydrationWarning className={`${outfit.variable}`}>
+      <body suppressHydrationWarning className="min-h-screen antialiased bg-page text-foreground font-sans">
         <ClientI18nProvider>{children}</ClientI18nProvider>
       </body>
     </html>

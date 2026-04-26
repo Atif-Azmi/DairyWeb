@@ -7,40 +7,41 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-outfit)", "system-ui", "sans-serif"],
+      },
       colors: {
-        foreground: "hsl(152 28% 14%)",
-        page: "hsl(48 38% 96%)",
+        page: "#f8fafc", // slate-50
+        foreground: "#0f172a", // slate-900
+        card: "#ffffff",
         cream: {
-          50: "hsl(48 55% 98%)",
-          100: "hsl(46 45% 94%)",
-          200: "hsl(42 35% 88%)",
+          50: "#f8fafc",
+          100: "#f1f5f9",
+          200: "#e2e8f0",
         },
         primary: {
-          DEFAULT: "hsl(152 42% 28%)",
-          foreground: "hsl(48 55% 98%)",
-          muted: "hsl(152 30% 38%)",
+          DEFAULT: "#059669", // Emerald 600
+          foreground: "#ffffff",
+          muted: "#047857", // Emerald 700
         },
         secondary: {
-          DEFAULT: "hsl(152 18% 92%)",
-          foreground: "hsl(152 28% 18%)",
+          DEFAULT: "#f1f5f9", // Slate 100
+          foreground: "#334155", // Slate 700
         },
         accent: {
-          DEFAULT: "hsl(38 88% 54%)",
-          foreground: "hsl(152 35% 12%)",
-        },
-        sky: {
-          wash: "hsl(198 55% 94%)",
+          DEFAULT: "#2563eb", // Blue 600
+          foreground: "#ffffff",
         },
         destructive: {
-          DEFAULT: "hsl(0 72% 48%)",
-          foreground: "hsl(0 0% 100%)",
+          DEFAULT: "#ef4444", // Red 500
+          foreground: "#ffffff",
         },
         muted: {
-          DEFAULT: "hsl(152 12% 88%)",
-          foreground: "hsl(152 10% 38%)",
+          DEFAULT: "#f1f5f9", // Slate 100
+          foreground: "#64748b", // Slate 500
         },
-        border: "hsl(152 14% 82%)",
-        input: "hsl(152 14% 82%)",
+        border: "#e2e8f0", // Slate 200
+        input: "#ffffff",
       },
       borderRadius: {
         lg: `0.5rem`,

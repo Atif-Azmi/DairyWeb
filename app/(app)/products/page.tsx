@@ -69,7 +69,15 @@ const ProductsPage = () => {
     if (confirm("Are you sure? This product might be used in past entries.")) {
       const { error } = await supabaseClient.from("products").delete().eq("id", id);
       if (error) {
-        setPageError(error.message);
+        if (error.message.includes("violates foreign key constraint")) {
+          setPageError(
+            lang === "hi"
+              ? "आप इस उत्पाद को नहीं हटा सकते क्योंकि यह पुरानी प्रविष्टियों (बिक्री) से जुड़ा हुआ है। कृपया इसके बजाय इसे संपादित करें।"
+              : "Cannot delete this product because it is linked to past sales. Please edit the product instead if you want to change it."
+          );
+        } else {
+          setPageError(error.message);
+        }
         setPageMessage(null);
       } else {
         setPageMessage("Product deleted.");
