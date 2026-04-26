@@ -21,6 +21,7 @@ interface CustomerSummary {
   total_sales: number;
   total_paid: number;
   balance: number;
+  dairy_name?: string;
 }
 
 const CustomersPage = () => {
@@ -79,6 +80,8 @@ const CustomersPage = () => {
         paidMap.set(id, (paidMap.get(id) || 0) + Number(t.amount || 0));
       }
 
+      const { data: profile } = await supabaseClient.from("dairy_profile").select("dairy_name").eq("id", 1).maybeSingle();
+
       const list: CustomerSummary[] = (rows || []).map((c) => {
         const sales = salesMap.get(c.id) || 0;
         const paid = paidMap.get(c.id) || 0;
@@ -90,6 +93,7 @@ const CustomersPage = () => {
           total_sales: sales,
           total_paid: paid,
           balance: sales - paid,
+          dairy_name: profile?.dairy_name || "Dairy",
         };
       });
 
@@ -134,6 +138,25 @@ const CustomersPage = () => {
       (c.phone || "").toLowerCase().includes(q)
     );
   });
+
+  const handleRemindWhatsApp = (customer: CustomerSummary) => {
+    if (!customer.phone) {
+      alert(lang === "hi" ? "इस ग्राहक का फ़ोन नंबर मौजूद नहीं है।" : "Phone number missing for this customer.");
+      return;
+    }
+    const text = `Dear ${customer.name},\n\nGreetings from *${customer.dairy_name || "Dairy"}*! 🥛\n\nWe hope you're enjoying our dairy products! This is a friendly reminder regarding your pending payment of ₹${customer.balance.toFixed(2)}.\n\nPlease clear the dues at your earliest convenience. Thank you!`;
+    
+    let phoneStr = customer.phone.replace(/\D/g, "");
+    if (phoneStr && phoneStr.length === 10) {
+      phoneStr = "91" + phoneStr;
+    }
+
+    const wa = phoneStr 
+      ? `https://wa.me/${phoneStr}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+      
+    window.open(wa, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div className="space-y-6">
@@ -248,6 +271,16 @@ const CustomersPage = () => {
                     </td>
                     <td className="px-4 py-2 text-center">
                       <div className="flex justify-center gap-2 flex-wrap">
+                        {c.balance > 0 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="text-primary hover:bg-primary/10 border-primary/20"
+                            onClick={() => handleRemindWhatsApp(c)}
+                          >
+                            {lang === "hi" ? "याद दिलाएं" : "Remind"}
+                          </Button>
+                        )}
                         <Button
                           type="button"
                           variant="outline"

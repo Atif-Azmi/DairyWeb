@@ -167,19 +167,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { error: shareErr } = await auth.supabase.from("bill_shares").insert({
-    customer_id,
-    period_start: start_date,
-    period_end: end_date,
-    storage_path: path,
-    created_by: auth.user?.id ?? null,
-  });
-  if (shareErr) {
-    console.error("bill_shares insert:", shareErr.message);
+  // Shorten the signed URL using TinyURL to keep WhatsApp messages clean
+  let shortUrl = null;
+  try {
+    const tinyRes = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(signed.signedUrl));
+    if (tinyRes.ok) {
+      shortUrl = await tinyRes.text();
+    }
+  } catch (err) {
+    console.error("TinyURL error:", err);
   }
 
   return json({
     signedUrl: signed.signedUrl,
+    shortUrl: shortUrl,
     path,
     bucket,
     expiresInSeconds: 60 * 60 * 24 * 7,
