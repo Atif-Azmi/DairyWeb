@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { data: entries, error: entriesError } = await auth.supabase
-    .from("dairy_entries" as any)
+    .from("daily_entries" as any)
     .select("total_amount")
     .eq("customer_id", customerId) as { data: any[] | null; error: any };
 
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { data: transactions, error: txError } = await auth.supabase
-    .from("dairy_transactions" as any)
+    .from("daily_transactions" as any)
     .select("amount")
     .eq("customer_id", customerId) as { data: any[] | null; error: any };
 

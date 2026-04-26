@@ -37,7 +37,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSuccess }) => {
     try {
       if (normalizedPhone) {
         let existsQuery = supabaseClient
-          .from("dairy_customers" as any)
+          .from("daily_customers" as any)
           .select("id, name, phone")
           .eq("phone", normalizedPhone)
           .limit(1);
@@ -59,7 +59,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSuccess }) => {
 
       if (customer?.id) {
         const { error: submissionError } = await supabaseClient
-          .from("dairy_customers" as any)
+          .from("daily_customers" as any)
           .update(customerData as any)
           .eq("id", customer.id);
         if (submissionError) {
@@ -70,7 +70,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSuccess }) => {
         }
       } else {
         const { data: created, error: submissionError } = await supabaseClient
-          .from("dairy_customers" as any)
+          .from("daily_customers" as any)
           .insert([customerData] as any)
           .select("id")
           .single() as { data: any | null; error: any };

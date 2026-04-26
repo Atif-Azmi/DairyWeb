@@ -7,10 +7,10 @@ export async function GET() {
   if (!auth.ok) return auth.response;
 
   const { data, error } = await auth.supabase
-    .from("dairy_profile")
+    .from("daily_profile" as any)
     .select("*")
     .eq("id", 1)
-    .maybeSingle();
+    .maybeSingle() as { data: any | null; error: any };
 
   if (error) return json({ error: error.message }, { status: 500 });
   return json(data);
@@ -35,13 +35,13 @@ export async function PATCH(req: NextRequest) {
   }
 
   const { data, error } = await auth.supabase
-    .from("dairy_profile")
+    .from("daily_profile" as any)
     .upsert(
       { id: 1, ...payload, updated_at: new Date().toISOString() },
       { onConflict: "id" }
     )
     .select()
-    .single();
+    .single() as { data: any | null; error: any };
 
   if (error) return json({ error: error.message }, { status: 500 });
   return json(data);

@@ -36,8 +36,8 @@ export default function AdvancesPage() {
       p_end: "2100-01-01",
     });
 
-    const { data: phoneData } = await supabaseClient.from("dairy_customers" as any).select("id, phone") as { data: { id: string; phone: string | null }[] | null };
-    const { data: profile } = await supabaseClient.from("dairy_profile").select("dairy_name").eq("id", 1).maybeSingle();
+    const { data: phoneData } = await supabaseClient.from("daily_customers" as any).select("id, phone") as { data: { id: string; phone: string | null }[] | null };
+    const { data: profile } = await supabaseClient.from("daily_profile").select("dairy_name").eq("id", 1).maybeSingle() as { data: any | null };
 
     if (data) {
       const merged = (data as CustomerBalance[]).map(c => {
@@ -86,7 +86,7 @@ export default function AdvancesPage() {
 
     const today = new Date().toISOString().split("T")[0];
 
-    const { error } = await supabaseClient.from("dairy_transactions" as any).insert({
+    const { error } = await supabaseClient.from("daily_transactions" as any).insert({
       customer_id: selectedCustomer.customer_id,
       type: type,
       amount: Number(amount),

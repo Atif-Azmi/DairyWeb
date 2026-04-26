@@ -90,7 +90,14 @@ const Sidebar = ({ mobileOpen = false, onNavigate }: SidebarProps) => {
       </nav>
       <div className="p-4 border-t border-slate-100 bg-slate-50/50 md:rounded-b-3xl">
         <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2 mb-3">
-          Shaibya Solutions
+          <a 
+            href="https://www.shaibyasolutions.com/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="hover:text-primary transition-colors"
+          >
+            Shaibya Solutions
+          </a>
         </p>
         <Button
           variant="outline"

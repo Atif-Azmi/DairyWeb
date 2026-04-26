@@ -60,7 +60,7 @@ const EntriesPage = () => {
       const { data, error, count } = await withTimeout(
         (() => {
           let q = supabaseClient
-            .from("dairy_entries" as any)
+            .from("daily_entries" as any)
             .select(
               debouncedSearch
                 ? "id, date, shift, quantity, total_amount, customers!inner(name), products(name)"
@@ -103,7 +103,7 @@ const EntriesPage = () => {
       setLoadError(null);
       try {
         const { count: total, error: totalErr } = await withTimeout(
-          supabaseClient.from("dairy_entries" as any).select("id", { count: "exact", head: true }),
+          supabaseClient.from("daily_entries" as any).select("id", { count: "exact", head: true }),
           FETCH_MS
         );
         if (totalErr) {
@@ -114,11 +114,11 @@ const EntriesPage = () => {
         }
 
         const { data: customersData, error: cErr } = await withTimeout(
-          supabaseClient.from("dairy_customers" as any).select("id, name"),
+          supabaseClient.from("daily_customers" as any).select("id, name"),
           FETCH_MS
         );
         const { data: productsData, error: pErr } = await withTimeout(
-          supabaseClient.from("dairy_products" as any).select("id, name, default_rate"),
+          supabaseClient.from("daily_products" as any).select("id, name, default_rate"),
           FETCH_MS
         ) as { data: any[] | null; error: any };
 

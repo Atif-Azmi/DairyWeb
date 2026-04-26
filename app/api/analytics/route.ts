@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const { data: entries, error: entriesError } = await auth.supabase
-      .from("dairy_entries" as any)
+      .from("daily_entries" as any)
       .select("quantity, total_amount, product_id, customer_id, date")
       .gte("date", startDate)
       .lte("date", endDate) as { data: any[] | null; error: any };
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     if (entriesError) throw entriesError;
 
     const { data: products, error: productsError } = await auth.supabase
-      .from("dairy_products" as any)
+      .from("daily_products" as any)
       .select("id, name") as { data: any[] | null; error: any };
 
     if (productsError) throw productsError;
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     const productMap = new Map(products?.map((p) => [p.id, p.name]));
 
     const { data: tx, error: txError } = await auth.supabase
-      .from("dairy_transactions" as any)
+      .from("daily_transactions" as any)
       .select("amount, type, customer_id")
       .gte("date", startDate)
       .lte("date", endDate) as { data: any[] | null; error: any };
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     const customerSales: Record<string, number> = {};
 
     const { data: custRows } = await auth.supabase
-      .from("dairy_customers" as any)
+      .from("daily_customers" as any)
       .select("id, name") as { data: any[] | null };
     const nameById = new Map((custRows || []).map((c) => [c.id, c.name]));
 

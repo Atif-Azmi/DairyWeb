@@ -99,8 +99,7 @@ const dict: Record<Lang, Record<string, string>> = {
 			"We craft practical software for local businesses — starting with dairy operations where trust, speed, and clear numbers matter every morning.",
 		"public.builtByBodyB":
 			"Dairy Management Pro is tailored for milk routes, booth sales, and small cooperatives who outgrow notebooks but do not need enterprise complexity.",
-		"auth.loginHelp":
-			"Use your Supabase Auth email and password (create a user in the Supabase dashboard or run npm run create-demo-user locally).",
+		"auth.loginHelp": "Please enter your credentials to continue.",
 		"auth.email": "Email",
 		"auth.password": "Password",
 		"auth.signingIn": "Signing in…",
@@ -188,8 +187,7 @@ const dict: Record<Lang, Record<string, string>> = {
 			"हम स्थानीय बिज़नेस के लिए तेज़ और भरोसेमंद सॉफ्टवेयर बनाते हैं — खासकर डेयरी के लिए।",
 		"public.builtByBodyB":
 			"Dairy Management Pro दूध रूट/बूथ और छोटे को-ऑपरेटिव्स के लिए बनाया गया है।",
-		"auth.loginHelp":
-			"अपना Supabase Auth वाला ईमेल और पासवर्ड इस्तेमाल करें (Supabase डैशबोर्ड में यूज़र बनाएं या लोकली npm run create-demo-user चलाएं)।",
+		"auth.loginHelp": "कृपया जारी रखने के लिए अपनी साख दर्ज करें।",
 		"auth.email": "ईमेल",
 		"auth.password": "पासवर्ड",
 		"auth.signingIn": "साइन इन हो रहा है…",

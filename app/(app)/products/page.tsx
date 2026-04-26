@@ -31,7 +31,7 @@ const ProductsPage = () => {
     setPageError(null);
     try {
       const { data, error } = await withTimeout(
-        supabaseClient.from("dairy_products" as any).select("*").order("name"),
+        supabaseClient.from("daily_products" as any).select("*").order("name"),
         FETCH_MS
       ) as { data: any[] | null; error: any };
       if (error) {
@@ -67,7 +67,7 @@ const ProductsPage = () => {
 
   const handleDelete = async (id: number) => {
     if (confirm("Are you sure? This product might be used in past entries.")) {
-      const { error } = await supabaseClient.from("dairy_products" as any).delete().eq("id", id);
+      const { error } = await supabaseClient.from("daily_products" as any).delete().eq("id", id);
       if (error) {
         if (error.message.includes("violates foreign key constraint")) {
           setPageError(
@@ -219,8 +219,8 @@ const ProductForm = ({
       }
       const payload = { name: normalized, default_rate: rateNum, unit };
       const { error } = product
-        ? await supabaseClient.from("dairy_products" as any).update(payload).eq("id", product.id)
-        : await supabaseClient.from("dairy_products" as any).insert([payload]);
+        ? await supabaseClient.from("daily_products" as any).update(payload).eq("id", product.id)
+        : await supabaseClient.from("daily_products" as any).insert([payload]);
 
       if (error) {
         if (error.message.includes("products_name_check")) {

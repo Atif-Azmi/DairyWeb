@@ -34,13 +34,13 @@ export default function RetailPage() {
 
   const loadData = useCallback(async () => {
     // Load products
-    const { data: prods } = await supabaseClient.from("dairy_products" as any).select("*") as { data: any[] | null };
+    const { data: prods } = await supabaseClient.from("daily_products" as any).select("*") as { data: any[] | null };
     if (prods) setProducts(prods);
 
     // Load today's retail sales summary
     const today = new Date().toISOString().split("T")[0];
     const { data: sales } = await supabaseClient
-      .from("dairy_retail_sales" as any)
+      .from("daily_retail_sales" as any)
       .select("total_amount, payment_mode")
       .eq("date", today) as { data: RetailSale[] | null };
 
@@ -80,7 +80,7 @@ export default function RetailPage() {
 
     const today = new Date().toISOString().split("T")[0];
 
-    const { error } = await supabaseClient.from("dairy_retail_sales" as any).insert({
+    const { error } = await supabaseClient.from("daily_retail_sales" as any).insert({
       date: today,
       product_id: parseInt(selectedProductId),
       quantity: Number(quantity),

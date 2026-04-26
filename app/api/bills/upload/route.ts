@@ -21,13 +21,13 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: profile } = await auth.supabase
-    .from("dairy_profile")
+    .from("daily_profile")
     .select("*")
     .eq("id", 1)
-    .maybeSingle();
+    .maybeSingle() as { data: any | null };
 
   const { data: customer, error: cErr } = await auth.supabase
-    .from("dairy_customers" as any)
+    .from("daily_customers" as any)
     .select("name")
     .eq("id", customer_id)
     .single() as { data: any | null; error: any };
@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: entries, error: eErr } = await auth.supabase
-    .from("dairy_entries" as any)
-    .select("date, shift, quantity, price_per_unit, total_amount, dairy_products(name)")
+    .from("daily_entries" as any)
+    .select("date, shift, quantity, price_per_unit, total_amount, daily_products(name)")
     .eq("customer_id", customer_id)
     .gte("date", start_date)
     .lte("date", end_date)
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: prevEntries, error: peErr } = await auth.supabase
-    .from("dairy_entries" as any)
+    .from("daily_entries" as any)
     .select("total_amount")
     .eq("customer_id", customer_id)
     .lt("date", start_date) as { data: any[] | null; error: any };
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: transactions, error: tErr } = await auth.supabase
-    .from("dairy_transactions" as any)
+    .from("daily_transactions" as any)
     .select("date, type, amount, payment_mode, note")
     .eq("customer_id", customer_id)
     .gte("date", start_date)
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: prevTransactions, error: ptErr } = await auth.supabase
-    .from("dairy_transactions" as any)
+    .from("daily_transactions" as any)
     .select("amount")
     .eq("customer_id", customer_id)
     .lt("date", start_date) as { data: any[] | null; error: any };
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   const lines: BillPdfLine[] = [];
 
   for (const e of entries || []) {
-    const p = e.dairy_products as { name?: string } | null;
+    const p = e.daily_products as { name?: string } | null;
     const name = p?.name ?? "product";
     lines.push({
       date: String(e.date),
