@@ -171,7 +171,19 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      get_top_customers: {
+        Args: {
+          p_start: string;
+          p_end: string;
+        };
+        Returns: {
+          customer_id: string;
+          name: string;
+          balance: number;
+        }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };
