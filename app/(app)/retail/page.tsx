@@ -13,6 +13,11 @@ interface Product {
   default_rate: number;
 }
 
+interface RetailSale {
+  total_amount: number;
+  payment_mode: string;
+}
+
 export default function RetailPage() {
   const { t, lang } = useI18n();
   const [products, setProducts] = useState<Product[]>([]);
@@ -37,7 +42,7 @@ export default function RetailPage() {
     const { data: sales } = await supabaseClient
       .from("retail_sales")
       .select("total_amount, payment_mode")
-      .eq("date", today);
+      .eq("date", today) as { data: RetailSale[] | null };
 
     let cash = 0;
     let online = 0;
@@ -81,7 +86,7 @@ export default function RetailPage() {
       quantity: Number(quantity),
       total_amount: totalAmount,
       payment_mode: paymentMode,
-    });
+    } as any);
 
     if (error) {
       if (error.code === '42P01') {
@@ -123,6 +128,7 @@ export default function RetailPage() {
             
             <div className="grid grid-cols-2 gap-4">
               <Input
+                id="quantity"
                 label="Quantity"
                 type="number"
                 step="0.01"
@@ -132,6 +138,7 @@ export default function RetailPage() {
                 required
               />
               <Input
+                id="rate"
                 label="Rate"
                 type="number"
                 step="0.01"

@@ -7,7 +7,7 @@ const MAX_REQUESTS_PER_WINDOW = 30; // 30 requests per minute per IP
 
 export async function middleware(request: NextRequest) {
   // Basic Rate Limiting
-  const ip = request.ip || request.headers.get("x-forwarded-for") || "127.0.0.1";
+  const ip = (request as any).ip || request.headers.get("x-forwarded-for") || "127.0.0.1";
   
   if (request.nextUrl.pathname.startsWith("/api/auth")) {
     const now = Date.now();
