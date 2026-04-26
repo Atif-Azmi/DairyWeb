@@ -116,7 +116,16 @@ export default function LandingPageClient() {
       </section>
 
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} Shaibya Solutions · Dairy Management Pro
+        © {new Date().getFullYear()}{" "}
+        <a 
+          href="https://www.shaibyasolutions.com/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="hover:text-primary transition-colors font-medium"
+        >
+          Shaibya Solutions
+        </a>{" "}
+        · Dairy Management Pro
       </footer>
     </div>
   );

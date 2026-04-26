@@ -53,7 +53,7 @@ const BillingPage = () => {
 
   const fetchCustomers = useCallback(async () => {
     const { data: cust, error: cErr } = await withTimeout(
-      supabaseClient.from("dairy_customers" as any).select("id, name, phone"),
+      supabaseClient.from("daily_customers" as any).select("id, name, phone"),
       FETCH_MS
     );
     if (cErr) {
@@ -71,7 +71,7 @@ const BillingPage = () => {
       try {
         await fetchCustomers();
         const { data: prof, error: pErr } = await withTimeout(
-          supabaseClient.from("dairy_profile").select("*").eq("id", 1).maybeSingle(),
+          supabaseClient.from("daily_profile").select("*").eq("id", 1).maybeSingle(),
           FETCH_MS
         );
         if (pErr) {
@@ -118,35 +118,35 @@ const BillingPage = () => {
     setIsBillGenerated(false);
 
     const { data: prevEntries } = await supabaseClient
-      .from("entries")
+      .from("daily_entries" as any)
       .select("total_amount")
       .eq("customer_id", selectedCustomer)
-      .lt("date", startDate);
+      .lt("date", startDate) as { data: any[] | null };
 
     const { data: prevTransactions } = await supabaseClient
-      .from("transactions")
+      .from("daily_transactions" as any)
       .select("amount")
       .eq("customer_id", selectedCustomer)
-      .lt("date", startDate);
+      .lt("date", startDate) as { data: any[] | null };
 
     const { data: entries } = await supabaseClient
-      .from("entries")
-      .select("date, shift, quantity, price_per_unit, total_amount, products(name)")
+      .from("daily_entries" as any)
+      .select("date, shift, quantity, price_per_unit, total_amount, daily_products(name)")
       .eq("customer_id", selectedCustomer)
       .gte("date", startDate)
-      .lte("date", endDate);
+      .lte("date", endDate) as { data: any[] | null };
 
     const { data: transactions } = await supabaseClient
-      .from("transactions")
+      .from("daily_transactions" as any)
       .select("date, type, amount, payment_mode, note")
       .eq("customer_id", selectedCustomer)
       .gte("date", startDate)
-      .lte("date", endDate);
+      .lte("date", endDate) as { data: any[] | null };
 
     const nextLines: BillLine[] = [];
 
     for (const e of entries || []) {
-      const p = e.products as { name?: string } | null;
+      const p = e.daily_products as { name?: string } | null;
       const name = p?.name ?? "product";
       nextLines.push({
         date: String(e.date),

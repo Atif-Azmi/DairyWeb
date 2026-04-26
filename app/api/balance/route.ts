@@ -14,18 +14,18 @@ export async function GET(req: NextRequest) {
   }
 
   const { data: entries, error: entriesError } = await auth.supabase
-    .from("entries")
+    .from("daily_entries" as any)
     .select("total_amount")
-    .eq("customer_id", customerId);
+    .eq("customer_id", customerId) as { data: any[] | null; error: any };
 
   if (entriesError) {
     return json({ error: entriesError.message }, { status: 500 });
   }
 
   const { data: transactions, error: txError } = await auth.supabase
-    .from("transactions")
+    .from("daily_transactions" as any)
     .select("amount")
-    .eq("customer_id", customerId);
+    .eq("customer_id", customerId) as { data: any[] | null; error: any };
 
   if (txError) {
     return json({ error: txError.message }, { status: 500 });

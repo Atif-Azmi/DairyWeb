@@ -42,7 +42,7 @@ const CustomersPage = () => {
     setLoadError(null);
     try {
       const { data: rows, error: cErr } = await withTimeout(
-        supabaseClient.from("dairy_customers" as any).select("id, name, phone, address"),
+        supabaseClient.from("daily_customers" as any).select("id, name, phone, address"),
         FETCH_MS
       ) as { data: any[] | null; error: any };
 
@@ -54,13 +54,13 @@ const CustomersPage = () => {
       }
 
       const { data: entries, error: eErr } = await withTimeout(
-        supabaseClient.from("entries").select("customer_id, total_amount"),
+        supabaseClient.from("daily_entries" as any).select("customer_id, total_amount"),
         FETCH_MS
-      );
+      ) as { data: any[] | null; error: any };
       const { data: txs, error: tErr } = await withTimeout(
-        supabaseClient.from("transactions").select("customer_id, amount"),
+        supabaseClient.from("daily_transactions" as any).select("customer_id, amount"),
         FETCH_MS
-      );
+      ) as { data: any[] | null; error: any };
 
       if (eErr || tErr) {
         setLoadError(eErr?.message ?? tErr?.message ?? "Could not load balances");
@@ -80,7 +80,7 @@ const CustomersPage = () => {
         paidMap.set(id, (paidMap.get(id) || 0) + Number(t.amount || 0));
       }
 
-      const { data: profile } = await supabaseClient.from("dairy_profile").select("dairy_name").eq("id", 1).maybeSingle();
+      const { data: profile } = await supabaseClient.from("daily_profile").select("dairy_name").eq("id", 1).maybeSingle() as { data: any | null };
 
       const list: CustomerSummary[] = (rows || []).map((c) => {
         const sales = salesMap.get(c.id) || 0;

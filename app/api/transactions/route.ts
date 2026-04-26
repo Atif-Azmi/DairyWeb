@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const customerId = searchParams.get("customer_id");
 
   let query = auth.supabase
-    .from("transactions")
+    .from("daily_transactions" as any)
     .select("*")
     .order("date", { ascending: true });
   if (customerId) query = query.eq("customer_id", customerId);
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { data, error } = await auth.supabase
-    .from("transactions")
+    .from("daily_transactions" as any)
     .insert([
       {
         customer_id,

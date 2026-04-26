@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     url: req.url,
   });
 
-  let query = auth.supabase.from("entries").select("*").order("date", { ascending: true });
+  let query = auth.supabase.from("daily_entries" as any).select("*").order("date", { ascending: true });
   if (customerId) query = query.eq("customer_id", customerId);
 
   const { data, error } = await query;
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { data, error } = await auth.supabase
-    .from("entries")
+    .from("daily_entries" as any)
     .insert([
       {
         customer_id,
@@ -181,7 +181,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const { data, error } = await auth.supabase
-    .from("entries")
+    .from("daily_entries" as any)
     .update(patch)
     .eq("id", id)
     .select()
