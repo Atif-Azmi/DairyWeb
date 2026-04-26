@@ -9,47 +9,61 @@ import {
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
-    fontSize: 10,
+    padding: 10,
     fontFamily: "Helvetica",
     color: "#1a2e1a",
   },
-  header: {
-    borderBottomWidth: 2,
-    borderBottomColor: "#2d6a4f",
-    paddingBottom: 12,
-    marginBottom: 16,
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    width: "100%",
+    height: "100%",
   },
-  brand: { fontSize: 18, fontWeight: "bold", color: "#1b4332" },
-  tagline: { fontSize: 9, color: "#52796f", marginTop: 4 },
-  meta: { fontSize: 9, color: "#344e41", marginTop: 8 },
+  tile: {
+    width: "50%",
+    height: "50%",
+    padding: 15,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderStyle: "dashed",
+  },
+  header: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#2d6a4f",
+    paddingBottom: 6,
+    marginBottom: 8,
+  },
+  brand: { fontSize: 12, fontWeight: "bold", color: "#1b4332" },
+  tagline: { fontSize: 7, color: "#52796f", marginTop: 2 },
+  meta: { fontSize: 7, color: "#344e41", marginTop: 4 },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: 8,
     fontWeight: "bold",
     color: "#2d6a4f",
-    marginTop: 14,
-    marginBottom: 6,
+    marginTop: 8,
+    marginBottom: 4,
   },
   row: {
     flexDirection: "row",
     borderBottomWidth: 0.5,
     borderBottomColor: "#d8f3dc",
-    paddingVertical: 5,
+    paddingVertical: 3,
   },
-  cell1: { width: "22%" },
-  cell2: { width: "18%" },
-  cell3: { width: "15%", textAlign: "right" },
-  cell4: { width: "20%", textAlign: "right" },
+  cell1: { width: "22%", fontSize: 7 },
+  cell2: { width: "18%", fontSize: 7 },
+  cell3: { width: "15%", textAlign: "right", fontSize: 7 },
+  cell4: { width: "20%", textAlign: "right", fontSize: 7 },
   th: { fontWeight: "bold", color: "#1b4332" },
   totals: {
-    marginTop: 16,
-    padding: 12,
+    marginTop: 10,
+    padding: 8,
     backgroundColor: "#f1faee",
     borderRadius: 4,
   },
-  totalRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
-  totalLabel: { fontWeight: "bold" },
-  balanceDue: { fontSize: 12, color: "#bc4749", marginTop: 6 },
+  totalRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 2 },
+  totalLabel: { fontWeight: "bold", fontSize: 7 },
+  totalValue: { fontSize: 7 },
+  balanceDue: { fontSize: 9, color: "#bc4749", marginTop: 4, fontWeight: "bold" },
 });
 
 export type BillPdfLine = {
@@ -75,7 +89,7 @@ export type BillPdfProps = {
   finalBalance: string;
 };
 
-export function BillPdfDocument({
+const BillTile = ({
   dairyName,
   tagline,
   address,
@@ -88,58 +102,69 @@ export function BillPdfDocument({
   totalSales,
   totalPaid,
   finalBalance,
-}: BillPdfProps) {
+}: BillPdfProps) => (
+  <View style={styles.tile}>
+    <View style={styles.header}>
+      <Text style={styles.brand}>{dairyName}</Text>
+      {tagline ? <Text style={styles.tagline}>{tagline}</Text> : null}
+      {address ? <Text style={styles.meta}>{address}</Text> : null}
+      <Text style={styles.meta}>
+        {[phone && `Ph: ${phone}`, gst && `GST: ${gst}`]
+          .filter(Boolean)
+          .join("  ·  ")}
+      </Text>
+    </View>
+    <Text style={styles.meta}>Bill to: {customerName}</Text>
+    <Text style={styles.meta}>Period: {periodLabel}</Text>
+
+    <Text style={styles.sectionTitle}>Statement</Text>
+    <View style={styles.row}>
+      <Text style={[styles.cell1, styles.th]}>Date</Text>
+      <Text style={[styles.cell2, styles.th]}>Type</Text>
+      <Text style={[styles.cell1, styles.th]}>Detail</Text>
+      <Text style={[styles.cell3, styles.th]}>Debit</Text>
+      <Text style={[styles.cell4, styles.th]}>Credit</Text>
+    </View>
+    {lines.slice(0, 15).map((line, i) => (
+      <View key={i} style={styles.row}>
+        <Text style={styles.cell1}>{line.date}</Text>
+        <Text style={styles.cell2}>{line.kind}</Text>
+        <Text style={styles.cell1}>{line.detail}</Text>
+        <Text style={styles.cell3}>{line.debit}</Text>
+        <Text style={styles.cell4}>{line.credit}</Text>
+      </View>
+    ))}
+
+    <View style={styles.totals}>
+      <View style={styles.totalRow}>
+        <Text style={styles.totalLabel}>Prev balance</Text>
+        <Text style={styles.totalValue}>₹{openingBalance}</Text>
+      </View>
+      <View style={styles.totalRow}>
+        <Text style={styles.totalLabel}>Sales (period)</Text>
+        <Text style={styles.totalValue}>₹{totalSales}</Text>
+      </View>
+      <View style={styles.totalRow}>
+        <Text style={styles.totalLabel}>Paid (period)</Text>
+        <Text style={styles.totalValue}>₹{totalPaid}</Text>
+      </View>
+      <View style={styles.totalRow}>
+        <Text style={styles.totalLabel}>Net payable</Text>
+        <Text style={styles.balanceDue}>₹{finalBalance}</Text>
+      </View>
+    </View>
+  </View>
+);
+
+export function BillPdfDocument(props: BillPdfProps) {
   return (
-    <Document title={`Bill — ${customerName}`}>
+    <Document title={`Bill \u2014 ${props.customerName}`}>
       <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
-          <Text style={styles.brand}>{dairyName}</Text>
-          {tagline ? <Text style={styles.tagline}>{tagline}</Text> : null}
-          {address ? <Text style={styles.meta}>{address}</Text> : null}
-          <Text style={styles.meta}>
-            {[phone && `Phone: ${phone}`, gst && `GST: ${gst}`]
-              .filter(Boolean)
-              .join("  ·  ")}
-          </Text>
-        </View>
-        <Text style={styles.meta}>Bill to: {customerName}</Text>
-        <Text style={styles.meta}>Period: {periodLabel}</Text>
-
-        <Text style={styles.sectionTitle}>Statement</Text>
-        <View style={styles.row}>
-          <Text style={[styles.cell1, styles.th]}>Date</Text>
-          <Text style={[styles.cell2, styles.th]}>Type</Text>
-          <Text style={[styles.cell1, styles.th]}>Detail</Text>
-          <Text style={[styles.cell3, styles.th]}>Debit</Text>
-          <Text style={[styles.cell4, styles.th]}>Credit</Text>
-        </View>
-        {lines.map((line, i) => (
-          <View key={i} style={styles.row} wrap={false}>
-            <Text style={styles.cell1}>{line.date}</Text>
-            <Text style={styles.cell2}>{line.kind}</Text>
-            <Text style={styles.cell1}>{line.detail}</Text>
-            <Text style={styles.cell3}>{line.debit}</Text>
-            <Text style={styles.cell4}>{line.credit}</Text>
-          </View>
-        ))}
-
-        <View style={styles.totals}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Previous balance</Text>
-            <Text>₹{openingBalance}</Text>
-          </View>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total sales (period)</Text>
-            <Text>₹{totalSales}</Text>
-          </View>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total paid (period)</Text>
-            <Text>₹{totalPaid}</Text>
-          </View>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Net payable</Text>
-            <Text style={styles.balanceDue}>₹{finalBalance}</Text>
-          </View>
+        <View style={styles.grid}>
+          <BillTile {...props} />
+          <BillTile {...props} />
+          <BillTile {...props} />
+          <BillTile {...props} />
         </View>
       </Page>
     </Document>
