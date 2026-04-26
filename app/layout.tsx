@@ -8,7 +8,7 @@ const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 import type { Viewport } from "next";
 
 export const metadata = {
-  title: "Dairy Management Pro — Shaibya Solutions",
+  title: "Dairy Management Pro — Atif Azmi",
   description: "Modern dairy management system",
 };
 

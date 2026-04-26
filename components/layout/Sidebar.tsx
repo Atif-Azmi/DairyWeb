@@ -91,12 +91,12 @@ const Sidebar = ({ mobileOpen = false, onNavigate }: SidebarProps) => {
       <div className="p-4 border-t border-slate-100 bg-slate-50/50 md:rounded-b-3xl">
         <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2 mb-3">
           <a 
-            href="https://www.shaibyasolutions.com/" 
+            href="https://atif-azmi.vercel.app/" 
             target="_blank" 
-            rel="noopener noreferrer"
-            className="hover:text-primary transition-colors"
+            rel="noopener noreferrer" 
+            className="text-xs text-primary hover:underline font-semibold"
           >
-            Shaibya Solutions
+            Atif Azmi
           </a>
         </p>
         <Button

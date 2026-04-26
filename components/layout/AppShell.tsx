@@ -34,13 +34,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
         <footer className="px-4 md:px-8 py-4 border-t border-border bg-white/50 backdrop-blur-sm text-center">
           <p className="text-xs text-muted-foreground">
             Developed by{" "}
-            <a 
-              href="https://www.shaibyasolutions.com/" 
-              target="_blank" 
+            <a
+              href="https://atif-azmi.vercel.app/"
+              target="_blank"
               rel="noopener noreferrer"
-              className="text-primary font-medium hover:underline"
+              className="text-primary hover:underline font-semibold"
             >
-              Shaibya Solutions
+              Atif Azmi
             </a>
           </p>
         </footer>
