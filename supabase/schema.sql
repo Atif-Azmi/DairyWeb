@@ -19,7 +19,7 @@ CREATE TABLE dairy_customers (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE products (
+CREATE TABLE dairy_products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(64) NOT NULL UNIQUE,
     default_rate NUMERIC(10,2) NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE products (
     )
 );
 
-INSERT INTO products (name, default_rate, unit) VALUES
+INSERT INTO dairy_products (name, default_rate, unit) VALUES
 ('milk', 60, 'liter'),
 ('ghee', 850, 'kg')
 ON CONFLICT (name) DO NOTHING;
@@ -48,10 +48,10 @@ CREATE TABLE dairy_profile (
 
 INSERT INTO dairy_profile (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 
-CREATE TABLE entries (
+CREATE TABLE dairy_entries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     customer_id UUID NOT NULL REFERENCES dairy_customers(id) ON DELETE CASCADE,
-    product_id INT NOT NULL REFERENCES products(id),
+    product_id INT NOT NULL REFERENCES dairy_products(id),
     date DATE NOT NULL,
     shift VARCHAR NOT NULL CHECK (shift IN ('morning', 'evening')),
     quantity NUMERIC(10,3) NOT NULL CHECK (quantity >= 0),
@@ -59,9 +59,9 @@ CREATE TABLE entries (
     total_amount NUMERIC(12,2) GENERATED ALWAYS AS (quantity * price_per_unit) STORED
 );
 
-CREATE INDEX idx_entries_customer_date ON entries(customer_id, date);
+CREATE INDEX idx_entries_customer_date ON dairy_entries(customer_id, date);
 
-CREATE TABLE transactions (
+CREATE TABLE dairy_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     customer_id UUID NOT NULL REFERENCES dairy_customers(id) ON DELETE CASCADE,
     type VARCHAR NOT NULL CHECK (type IN ('advance', 'payment', 'adjustment')),
@@ -71,9 +71,9 @@ CREATE TABLE transactions (
     note TEXT
 );
 
-CREATE INDEX idx_transactions_customer_date ON transactions(customer_id, date);
+CREATE INDEX idx_transactions_customer_date ON dairy_transactions(customer_id, date);
 
-CREATE TABLE bill_shares (
+CREATE TABLE dairy_bill_shares (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     customer_id UUID NOT NULL REFERENCES dairy_customers(id) ON DELETE CASCADE,
     period_start DATE NOT NULL,
@@ -83,19 +83,19 @@ CREATE TABLE bill_shares (
     created_by UUID
 );
 
-CREATE INDEX idx_bill_shares_customer ON bill_shares(customer_id, period_start, period_end);
+CREATE INDEX idx_bill_shares_customer ON dairy_bill_shares(customer_id, period_start, period_end);
 
-CREATE TABLE retail_sales (
+CREATE TABLE dairy_retail_sales (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     date DATE NOT NULL DEFAULT CURRENT_DATE,
-    product_id INT NOT NULL REFERENCES products(id),
+    product_id INT NOT NULL REFERENCES dairy_products(id),
     quantity NUMERIC(10,3) NOT NULL CHECK (quantity >= 0),
     total_amount NUMERIC(12,2) NOT NULL,
     payment_mode VARCHAR NOT NULL CHECK (payment_mode IN ('cash', 'online', 'upi')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_retail_sales_date ON retail_sales(date);
+CREATE INDEX idx_retail_sales_date ON dairy_retail_sales(date);
 
 CREATE OR REPLACE FUNCTION get_top_customers(p_start DATE, p_end DATE)
 RETURNS TABLE (
@@ -115,18 +115,18 @@ BEGIN
         COALESCE(SUM(e.total_amount), 0) AS total_amount,
         COALESCE((
             SELECT SUM(t.amount)
-            FROM transactions t
+            FROM dairy_transactions t
             WHERE t.customer_id = c.id
                 AND t.date BETWEEN p_start AND p_end
         ), 0) AS total_paid,
         COALESCE(SUM(e.total_amount), 0) - COALESCE((
             SELECT SUM(t.amount)
-            FROM transactions t
+            FROM dairy_transactions t
             WHERE t.customer_id = c.id
                 AND t.date BETWEEN p_start AND p_end
         ), 0) AS balance
     FROM dairy_customers c
-    LEFT JOIN entries e
+    LEFT JOIN dairy_entries e
         ON e.customer_id = c.id
      AND e.date BETWEEN p_start AND p_end
     GROUP BY c.id, c.name

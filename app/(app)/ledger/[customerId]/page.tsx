@@ -92,9 +92,9 @@ const LedgerPage = () => {
       setCustomer(customerData);
 
       const { data: productsData, error: prodErr } = await withTimeout(
-        supabaseClient.from("products").select("*"),
+        supabaseClient.from("dairy_products" as any).select("*"),
         FETCH_MS
-      );
+      ) as { data: any[] | null; error: any };
       if (prodErr) {
         setActionError(prodErr.message);
         setProducts([]);
@@ -104,15 +104,16 @@ const LedgerPage = () => {
 
       const { data: entries, error: entErr } = await withTimeout(
         supabaseClient
-          .from("entries")
-          .select("*, products(name)")
+          .from("dairy_entries" as any)
+          .select("*, dairy_products(name)")
           .eq("customer_id", customerId),
         FETCH_MS
-      );
+      ) as { data: any[] | null; error: any };
+
       const { data: transactions, error: txErr } = await withTimeout(
-        supabaseClient.from("transactions").select("*").eq("customer_id", customerId),
+        supabaseClient.from("dairy_transactions" as any).select("*").eq("customer_id", customerId),
         FETCH_MS
-      );
+      ) as { data: any[] | null; error: any };
 
       if (entErr || txErr) {
         setActionError(entErr?.message ?? txErr?.message ?? "Could not load ledger");
@@ -150,7 +151,7 @@ const LedgerPage = () => {
         id: e.id,
         type: "entry" as const,
         date: e.date,
-        description: `${e.quantity} ${e.products?.name ?? "product"} @ ₹${Number(e.price_per_unit).toFixed(2)}`,
+        description: `${e.quantity} ${(e as any).dairy_products?.name ?? "product"} @ ₹${Number(e.price_per_unit).toFixed(2)}`,
         debit: Number(e.total_amount),
         credit: 0,
         original_item: e as unknown as Record<string, unknown>,
@@ -248,7 +249,7 @@ const LedgerPage = () => {
   };
 
   const handleDelete = async (item: LedgerItem) => {
-    const tableName = item.type === "entry" ? "entries" : "transactions";
+    const tableName = item.type === "entry" ? "dairy_entries" : "dairy_transactions";
     if (confirm(`Are you sure you want to delete this ${item.type}?`)) {
       const { error } = await supabaseClient.from(tableName).delete().eq("id", item.id);
       if (error) {

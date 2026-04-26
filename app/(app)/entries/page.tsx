@@ -60,7 +60,7 @@ const EntriesPage = () => {
       const { data, error, count } = await withTimeout(
         (() => {
           let q = supabaseClient
-            .from("entries")
+            .from("dairy_entries" as any)
             .select(
               debouncedSearch
                 ? "id, date, shift, quantity, total_amount, customers!inner(name), products(name)"
@@ -103,7 +103,7 @@ const EntriesPage = () => {
       setLoadError(null);
       try {
         const { count: total, error: totalErr } = await withTimeout(
-          supabaseClient.from("entries").select("id", { count: "exact", head: true }),
+          supabaseClient.from("dairy_entries" as any).select("id", { count: "exact", head: true }),
           FETCH_MS
         );
         if (totalErr) {
@@ -118,9 +118,9 @@ const EntriesPage = () => {
           FETCH_MS
         );
         const { data: productsData, error: pErr } = await withTimeout(
-          supabaseClient.from("products").select("id, name, default_rate"),
+          supabaseClient.from("dairy_products" as any).select("id, name, default_rate"),
           FETCH_MS
-        );
+        ) as { data: any[] | null; error: any };
 
         if (cErr || pErr) {
           setLoadError(cErr?.message ?? pErr?.message ?? "Could not load form data");

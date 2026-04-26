@@ -37,43 +37,43 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: entries, error: eErr } = await auth.supabase
-    .from("entries")
-    .select("date, shift, quantity, price_per_unit, total_amount, products(name)")
+    .from("dairy_entries" as any)
+    .select("date, shift, quantity, price_per_unit, total_amount, dairy_products(name)")
     .eq("customer_id", customer_id)
     .gte("date", start_date)
     .lte("date", end_date)
-    .order("date", { ascending: true });
+    .order("date", { ascending: true }) as { data: any[] | null; error: any };
 
   if (eErr) {
     return json({ error: eErr.message }, { status: 500 });
   }
 
   const { data: prevEntries, error: peErr } = await auth.supabase
-    .from("entries")
+    .from("dairy_entries" as any)
     .select("total_amount")
     .eq("customer_id", customer_id)
-    .lt("date", start_date);
+    .lt("date", start_date) as { data: any[] | null; error: any };
   if (peErr) {
     return json({ error: peErr.message }, { status: 500 });
   }
 
   const { data: transactions, error: tErr } = await auth.supabase
-    .from("transactions")
+    .from("dairy_transactions" as any)
     .select("date, type, amount, payment_mode, note")
     .eq("customer_id", customer_id)
     .gte("date", start_date)
     .lte("date", end_date)
-    .order("date", { ascending: true });
+    .order("date", { ascending: true }) as { data: any[] | null; error: any };
 
   if (tErr) {
     return json({ error: tErr.message }, { status: 500 });
   }
 
   const { data: prevTransactions, error: ptErr } = await auth.supabase
-    .from("transactions")
+    .from("dairy_transactions" as any)
     .select("amount")
     .eq("customer_id", customer_id)
-    .lt("date", start_date);
+    .lt("date", start_date) as { data: any[] | null; error: any };
   if (ptErr) {
     return json({ error: ptErr.message }, { status: 500 });
   }
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   const lines: BillPdfLine[] = [];
 
   for (const e of entries || []) {
-    const p = e.products as { name?: string } | null;
+    const p = e.dairy_products as { name?: string } | null;
     const name = p?.name ?? "product";
     lines.push({
       date: String(e.date),

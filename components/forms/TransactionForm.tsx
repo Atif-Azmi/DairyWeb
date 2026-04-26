@@ -54,7 +54,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 
     try {
       const { error: submissionError } = await supabaseClient
-        .from("transactions")
+        .from("dairy_transactions" as any)
         .insert([
           {
             customer_id: customerId,

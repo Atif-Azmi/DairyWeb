@@ -86,7 +86,7 @@ export default function AdvancesPage() {
 
     const today = new Date().toISOString().split("T")[0];
 
-    const { error } = await supabaseClient.from("transactions").insert({
+    const { error } = await supabaseClient.from("dairy_transactions" as any).insert({
       customer_id: selectedCustomer.customer_id,
       type: type,
       amount: Number(amount),

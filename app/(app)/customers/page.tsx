@@ -54,13 +54,13 @@ const CustomersPage = () => {
       }
 
       const { data: entries, error: eErr } = await withTimeout(
-        supabaseClient.from("entries").select("customer_id, total_amount"),
+        supabaseClient.from("dairy_entries" as any).select("customer_id, total_amount"),
         FETCH_MS
-      );
+      ) as { data: any[] | null; error: any };
       const { data: txs, error: tErr } = await withTimeout(
-        supabaseClient.from("transactions").select("customer_id, amount"),
+        supabaseClient.from("dairy_transactions" as any).select("customer_id, amount"),
         FETCH_MS
-      );
+      ) as { data: any[] | null; error: any };
 
       if (eErr || tErr) {
         setLoadError(eErr?.message ?? tErr?.message ?? "Could not load balances");
