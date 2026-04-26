@@ -27,10 +27,10 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
 
   const { data: customer, error: cErr } = await auth.supabase
-    .from("customers")
+    .from("dairy_customers" as any)
     .select("name")
     .eq("id", customer_id)
-    .single();
+    .single() as { data: any | null; error: any };
 
   if (cErr || !customer) {
     return json({ error: "Customer not found" }, { status: 404 });
@@ -143,7 +143,8 @@ export async function POST(req: NextRequest) {
   );
 
   const bucket = process.env.BILLS_BUCKET || "bills";
-  const path = `${customer_id}/${start_date}_${end_date}.pdf`;
+  const today = new Date().toISOString().slice(0, 10);
+  const path = `projects/dairy/${today}/bills/${customer_id}/${start_date}_${end_date}.pdf`;
 
   const { error: upErr } = await auth.supabase.storage
     .from(bucket)

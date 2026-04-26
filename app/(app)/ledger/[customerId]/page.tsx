@@ -68,7 +68,7 @@ const LedgerPage = () => {
 
     try {
       const { data: customerData, error: custErr } = await withTimeout(
-        supabaseClient.from("customers").select("id, name").eq("id", customerId).maybeSingle(),
+        supabaseClient.from("dairy_customers").select("id, name").eq("id", customerId).maybeSingle(),
         FETCH_MS
       );
 

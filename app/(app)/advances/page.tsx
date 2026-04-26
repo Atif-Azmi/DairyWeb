@@ -36,7 +36,7 @@ export default function AdvancesPage() {
       p_end: "2100-01-01",
     });
 
-    const { data: phoneData } = await supabaseClient.from("customers").select("id, phone");
+    const { data: phoneData } = await supabaseClient.from("dairy_customers" as any).select("id, phone") as { data: { id: string; phone: string | null }[] | null };
     const { data: profile } = await supabaseClient.from("dairy_profile").select("dairy_name").eq("id", 1).maybeSingle();
 
     if (data) {

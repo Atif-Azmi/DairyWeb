@@ -53,7 +53,7 @@ const BillingPage = () => {
 
   const fetchCustomers = useCallback(async () => {
     const { data: cust, error: cErr } = await withTimeout(
-      supabaseClient.from("customers").select("id, name, phone"),
+      supabaseClient.from("dairy_customers" as any).select("id, name, phone"),
       FETCH_MS
     );
     if (cErr) {
@@ -61,7 +61,7 @@ const BillingPage = () => {
       setCustomers([]);
       return false;
     }
-    setCustomers(cust || []);
+    setCustomers((cust as any) || []);
     return true;
   }, []);
 

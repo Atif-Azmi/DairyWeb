@@ -42,9 +42,9 @@ const CustomersPage = () => {
     setLoadError(null);
     try {
       const { data: rows, error: cErr } = await withTimeout(
-        supabaseClient.from("customers").select("id, name, phone, address"),
+        supabaseClient.from("dairy_customers" as any).select("id, name, phone, address"),
         FETCH_MS
-      );
+      ) as { data: any[] | null; error: any };
 
       if (cErr) {
         console.error(cErr);

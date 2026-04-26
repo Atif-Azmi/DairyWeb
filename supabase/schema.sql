@@ -9,7 +9,7 @@ DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS customers CASCADE;
 DROP TABLE IF EXISTS retail_sales CASCADE;
 
-CREATE TABLE customers (
+CREATE TABLE dairy_customers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR NOT NULL,
     phone VARCHAR,
@@ -50,7 +50,7 @@ INSERT INTO dairy_profile (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE entries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    customer_id UUID NOT NULL REFERENCES dairy_customers(id) ON DELETE CASCADE,
     product_id INT NOT NULL REFERENCES products(id),
     date DATE NOT NULL,
     shift VARCHAR NOT NULL CHECK (shift IN ('morning', 'evening')),
@@ -63,7 +63,7 @@ CREATE INDEX idx_entries_customer_date ON entries(customer_id, date);
 
 CREATE TABLE transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    customer_id UUID NOT NULL REFERENCES dairy_customers(id) ON DELETE CASCADE,
     type VARCHAR NOT NULL CHECK (type IN ('advance', 'payment', 'adjustment')),
     amount NUMERIC(12,2) NOT NULL CHECK (amount >= 0),
     payment_mode VARCHAR NOT NULL CHECK (payment_mode IN ('cash', 'online', 'upi')),
@@ -75,7 +75,7 @@ CREATE INDEX idx_transactions_customer_date ON transactions(customer_id, date);
 
 CREATE TABLE bill_shares (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    customer_id UUID NOT NULL REFERENCES dairy_customers(id) ON DELETE CASCADE,
     period_start DATE NOT NULL,
     period_end DATE NOT NULL,
     storage_path TEXT NOT NULL,
@@ -99,37 +99,37 @@ CREATE INDEX idx_retail_sales_date ON retail_sales(date);
 
 CREATE OR REPLACE FUNCTION get_top_customers(p_start DATE, p_end DATE)
 RETURNS TABLE (
-  customer_id UUID,
-  name TEXT,
-  total_liters NUMERIC,
-  total_amount NUMERIC,
-  total_paid NUMERIC,
-  balance NUMERIC
+    customer_id UUID,
+    name TEXT,
+    total_liters NUMERIC,
+    total_amount NUMERIC,
+    total_paid NUMERIC,
+    balance NUMERIC
 ) AS $$
 BEGIN
-  RETURN QUERY
-  SELECT
-    c.id,
-    c.name,
-    COALESCE(SUM(e.quantity), 0) AS total_liters,
-    COALESCE(SUM(e.total_amount), 0) AS total_amount,
-    COALESCE((
-      SELECT SUM(t.amount)
-      FROM transactions t
-      WHERE t.customer_id = c.id
-        AND t.date BETWEEN p_start AND p_end
-    ), 0) AS total_paid,
-    COALESCE(SUM(e.total_amount), 0) - COALESCE((
-      SELECT SUM(t.amount)
-      FROM transactions t
-      WHERE t.customer_id = c.id
-        AND t.date BETWEEN p_start AND p_end
-    ), 0) AS balance
-  FROM customers c
-  LEFT JOIN entries e
-    ON e.customer_id = c.id
-   AND e.date BETWEEN p_start AND p_end
-  GROUP BY c.id, c.name
-  ORDER BY total_amount DESC;
+    RETURN QUERY
+    SELECT
+        c.id,
+        c.name,
+        COALESCE(SUM(e.quantity), 0) AS total_liters,
+        COALESCE(SUM(e.total_amount), 0) AS total_amount,
+        COALESCE((
+            SELECT SUM(t.amount)
+            FROM transactions t
+            WHERE t.customer_id = c.id
+                AND t.date BETWEEN p_start AND p_end
+        ), 0) AS total_paid,
+        COALESCE(SUM(e.total_amount), 0) - COALESCE((
+            SELECT SUM(t.amount)
+            FROM transactions t
+            WHERE t.customer_id = c.id
+                AND t.date BETWEEN p_start AND p_end
+        ), 0) AS balance
+    FROM dairy_customers c
+    LEFT JOIN entries e
+        ON e.customer_id = c.id
+     AND e.date BETWEEN p_start AND p_end
+    GROUP BY c.id, c.name
+    ORDER BY total_amount DESC;
 END;
 $$ LANGUAGE plpgsql STABLE;
