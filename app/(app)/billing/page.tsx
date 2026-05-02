@@ -50,6 +50,7 @@ const BillingPage = () => {
   });
   const [isBillGenerated, setIsBillGenerated] = useState(false);
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
+  const [billsPerPage, setBillsPerPage] = useState(4);
 
   const fetchCustomers = useCallback(async () => {
     const { data: cust, error: cErr } = await withTimeout(
@@ -210,11 +211,12 @@ const BillingPage = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          customer_id: selectedCustomer,
-          start_date: startDate,
-          end_date: endDate,
-        }),
+          body: JSON.stringify({
+            customer_id: selectedCustomer,
+            start_date: startDate,
+            end_date: endDate,
+            billsPerPage,
+          }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Upload failed");
@@ -360,6 +362,27 @@ const BillingPage = () => {
             {loading ? (lang === "hi" ? "बन रहा है…" : "Generating…") : lang === "hi" ? "बिल बनाएं" : "Generate bill"}
           </Button>
         </div>
+
+        <div className="flex items-center gap-4 mt-6 print:hidden">
+          <label className="text-sm font-medium text-foreground">
+            {lang === "hi" ? "एक पेज में कितने बिल:" : "Bills per page:"}
+          </label>
+          <div className="flex gap-2">
+            {[1, 2, 4].map((n) => (
+              <button
+                key={n}
+                onClick={() => setBillsPerPage(n)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all shadow-sm ${
+                  billsPerPage === n
+                    ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2"
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="mt-4 print:hidden">
           <Button
             type="button"
@@ -401,21 +424,26 @@ const BillingPage = () => {
             Supabase storage bucket should be private and named "{bucketName}".
           </p>
 
-          <div className="bill-print">
-            <BillStatement
-              dairyName={profile?.dairy_name ?? "Dairy"}
-              tagline={profile?.tagline}
-              address={profile?.address}
-              phone={profile?.phone}
-              gst={profile?.gst}
-              customerName={customerName}
-              periodLabel={periodLabel}
-              lines={lines}
-              openingBalance={totals.openingBalance}
-              totalSales={totals.totalSales}
-              totalPaid={totals.totalPaid}
-              finalBalance={totals.finalBalance}
-            />
+          <div className={`bill-print grid gap-4 ${
+            billsPerPage === 1 ? "grid-cols-1" : "grid-cols-2"
+          }`}>
+            {Array.from({ length: billsPerPage }).map((_, i) => (
+              <BillStatement
+                key={i}
+                dairyName={profile?.dairy_name ?? "Dairy"}
+                tagline={profile?.tagline}
+                address={profile?.address}
+                phone={profile?.phone}
+                gst={profile?.gst}
+                customerName={customerName}
+                periodLabel={periodLabel}
+                lines={lines}
+                openingBalance={totals.openingBalance}
+                totalSales={totals.totalSales}
+                totalPaid={totals.totalPaid}
+                finalBalance={totals.finalBalance}
+              />
+            ))}
           </div>
         </>
       )}

@@ -6,24 +6,49 @@ DROP TABLE IF EXISTS daily_profile CASCADE;
 DROP TABLE IF EXISTS daily_products CASCADE;
 DROP TABLE IF EXISTS daily_customers CASCADE;
 DROP TABLE IF EXISTS daily_retail_sales CASCADE;
+DROP TABLE IF EXISTS user_subscriptions CASCADE;
+DROP TABLE IF EXISTS user_profiles CASCADE;
+DROP TABLE IF EXISTS payments CASCADE;
 
--- Also drop old names just in case
-DROP TABLE IF EXISTS bill_shares CASCADE;
-DROP TABLE IF EXISTS entries CASCADE;
-DROP TABLE IF EXISTS transactions CASCADE;
-DROP TABLE IF EXISTS dairy_profile CASCADE;
-DROP TABLE IF EXISTS products CASCADE;
-DROP TABLE IF EXISTS customers CASCADE;
-DROP TABLE IF EXISTS retail_sales CASCADE;
-DROP TABLE IF EXISTS dairy_customers CASCADE;
-DROP TABLE IF EXISTS dairy_products CASCADE;
-DROP TABLE IF EXISTS dairy_entries CASCADE;
-DROP TABLE IF EXISTS dairy_transactions CASCADE;
-DROP TABLE IF EXISTS dairy_bill_shares CASCADE;
-DROP TABLE IF EXISTS dairy_retail_sales CASCADE;
+-- 2 -- Core SaaS Tables
+CREATE TABLE user_profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    name VARCHAR NOT NULL,
+    email VARCHAR UNIQUE NOT NULL,
+    phone VARCHAR,
+    plan VARCHAR NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'plan1', 'plan2')),
+    trial_start_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    subscription_id VARCHAR,
+    subscription_status VARCHAR DEFAULT 'inactive',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
+CREATE TABLE user_subscriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    razorpay_subscription_id VARCHAR UNIQUE,
+    plan_id VARCHAR NOT NULL,
+    status VARCHAR NOT NULL,
+    current_period_start TIMESTAMP WITH TIME ZONE,
+    current_period_end TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    razorpay_payment_id VARCHAR UNIQUE,
+    razorpay_order_id VARCHAR,
+    amount NUMERIC(12,2) NOT NULL,
+    currency VARCHAR DEFAULT 'INR',
+    status VARCHAR NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 3 -- Business Tables (Multi-tenant)
 CREATE TABLE daily_customers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
     name VARCHAR NOT NULL,
     phone VARCHAR,
     address TEXT,
@@ -34,22 +59,15 @@ CREATE TABLE daily_customers (
 
 CREATE TABLE daily_products (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(64) NOT NULL UNIQUE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
+    name VARCHAR(64) NOT NULL,
     default_rate NUMERIC(10,2) NOT NULL,
     unit VARCHAR NOT NULL CHECK (unit IN ('liter', 'kg')),
-    CONSTRAINT products_name_format CHECK (
-      char_length(trim(name)) >= 1
-      AND name = lower(trim(name))
-    )
+    CONSTRAINT products_name_user_unique UNIQUE (user_id, name)
 );
 
-INSERT INTO daily_products (name, default_rate, unit) VALUES
-('milk', 60, 'liter'),
-('ghee', 850, 'kg')
-ON CONFLICT (name) DO NOTHING;
-
 CREATE TABLE daily_profile (
-    id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
     dairy_name VARCHAR(200) NOT NULL DEFAULT 'My Dairy',
     tagline VARCHAR(300),
     address TEXT,
@@ -59,10 +77,9 @@ CREATE TABLE daily_profile (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-INSERT INTO daily_profile (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
-
 CREATE TABLE daily_entries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
     customer_id UUID NOT NULL REFERENCES daily_customers(id) ON DELETE CASCADE,
     product_id INT NOT NULL REFERENCES daily_products(id),
     date DATE NOT NULL,
@@ -72,10 +89,11 @@ CREATE TABLE daily_entries (
     total_amount NUMERIC(12,2) GENERATED ALWAYS AS (quantity * price_per_unit) STORED
 );
 
-CREATE INDEX idx_entries_customer_date ON daily_entries(customer_id, date);
+CREATE INDEX idx_entries_user_customer_date ON daily_entries(user_id, customer_id, date);
 
 CREATE TABLE daily_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
     customer_id UUID NOT NULL REFERENCES daily_customers(id) ON DELETE CASCADE,
     type VARCHAR NOT NULL CHECK (type IN ('advance', 'payment', 'adjustment')),
     amount NUMERIC(12,2) NOT NULL CHECK (amount >= 0),
@@ -84,22 +102,21 @@ CREATE TABLE daily_transactions (
     note TEXT
 );
 
-CREATE INDEX idx_transactions_customer_date ON daily_transactions(customer_id, date);
+CREATE INDEX idx_transactions_user_customer_date ON daily_transactions(user_id, customer_id, date);
 
 CREATE TABLE daily_bill_shares (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
     customer_id UUID NOT NULL REFERENCES daily_customers(id) ON DELETE CASCADE,
     period_start DATE NOT NULL,
     period_end DATE NOT NULL,
     storage_path TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    created_by UUID
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
-CREATE INDEX idx_bill_shares_customer ON daily_bill_shares(customer_id, period_start, period_end);
 
 CREATE TABLE daily_retail_sales (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     product_id INT NOT NULL REFERENCES daily_products(id),
     quantity NUMERIC(10,3) NOT NULL CHECK (quantity >= 0),
@@ -108,46 +125,10 @@ CREATE TABLE daily_retail_sales (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_retail_sales_date ON daily_retail_sales(date);
-
-CREATE OR REPLACE FUNCTION get_top_customers(p_start DATE, p_end DATE)
-RETURNS TABLE (
-    customer_id UUID,
-    name TEXT,
-    total_liters NUMERIC,
-    total_amount NUMERIC,
-    total_paid NUMERIC,
-    balance NUMERIC
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT
-        c.id,
-        c.name,
-        COALESCE(SUM(e.quantity), 0) AS total_liters,
-        COALESCE(SUM(e.total_amount), 0) AS total_amount,
-        COALESCE((
-            SELECT SUM(t.amount)
-            FROM daily_transactions t
-            WHERE t.customer_id = c.id
-                AND t.date BETWEEN p_start AND p_end
-        ), 0) AS total_paid,
-        COALESCE(SUM(e.total_amount), 0) - COALESCE((
-            SELECT SUM(t.amount)
-            FROM daily_transactions t
-            WHERE t.customer_id = c.id
-                AND t.date BETWEEN p_start AND p_end
-        ), 0) AS balance
-    FROM daily_customers c
-    LEFT JOIN daily_entries e
-        ON e.customer_id = c.id
-     AND e.date BETWEEN p_start AND p_end
-    GROUP BY c.id, c.name
-    ORDER BY total_amount DESC;
-END;
-$$ LANGUAGE plpgsql STABLE;
-
--- 2 -- Enable RLS for all tables
+-- 4 -- RLS Policies (Proper Multi-tenancy)
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_profile ENABLE ROW LEVEL SECURITY;
@@ -156,32 +137,41 @@ ALTER TABLE daily_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_bill_shares ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_retail_sales ENABLE ROW LEVEL SECURITY;
 
--- Create policies to allow ONLY logged-in users full access
-CREATE POLICY "Allow authenticated users full access" ON daily_customers FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow authenticated users full access" ON daily_products FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow authenticated users full access" ON daily_profile FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow authenticated users full access" ON daily_entries FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow authenticated users full access" ON daily_transactions FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow authenticated users full access" ON daily_bill_shares FOR ALL TO authenticated USING (true);
-CREATE POLICY "Allow authenticated users full access" ON daily_retail_sales FOR ALL TO authenticated USING (true);
+CREATE POLICY "Users can only see their own profile" ON user_profiles FOR ALL TO authenticated USING (auth.uid() = id);
+CREATE POLICY "Users can only see their own subscriptions" ON user_subscriptions FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can only see their own payments" ON payments FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can only see their own customers" ON daily_customers FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can only see their own products" ON daily_products FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can only see their own dairy profile" ON daily_profile FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can only see their own entries" ON daily_entries FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can only see their own transactions" ON daily_transactions FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can only see their own bill shares" ON daily_bill_shares FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can only see their own retail sales" ON daily_retail_sales FOR ALL TO authenticated USING (auth.uid() = user_id);
 
--- 3 -- Create the private storage bucket for bills
-INSERT INTO storage.buckets (id, name, public) 
-VALUES ('bills', 'bills', false)
-ON CONFLICT (id) DO NOTHING;
+-- Storage Policies
+CREATE POLICY "Users can only upload to their own folder in bills" ON storage.objects
+FOR INSERT TO authenticated WITH CHECK (bucket_id = 'bills' AND (storage.foldername(name))[1] = auth.uid()::text);
 
--- Allow logged-in users to upload PDFs to the bills bucket
-CREATE POLICY "Allow authenticated uploads to bills" ON storage.objects
-FOR INSERT TO authenticated WITH CHECK (bucket_id = 'bills');
+CREATE POLICY "Users can only read their own folder in bills" ON storage.objects
+FOR SELECT TO authenticated USING (bucket_id = 'bills' AND (storage.foldername(name))[1] = auth.uid()::text);
 
--- Allow logged-in users to read PDFs from the bills bucket
-CREATE POLICY "Allow authenticated reads from bills" ON storage.objects
-FOR SELECT TO authenticated USING (bucket_id = 'bills');
 
--- 4 -- Allow logged-in users to overwrite existing PDFs
-CREATE POLICY "Allow authenticated updates to bills" ON storage.objects
-FOR UPDATE TO authenticated USING (bucket_id = 'bills');
+-- Trigger to create profile on signup
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS 
+BEGIN
+    INSERT INTO public.user_profiles (id, name, email, plan, trial_start_date)
+    VALUES (
+        new.id,
+        COALESCE(new.raw_user_meta_data->>'full_name', 'New User'),
+        new.email,
+        'free',
+        NOW()
+    );
+    RETURN new;
+END;
+ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Allow logged-in users to delete old PDFs if needed
-CREATE POLICY "Allow authenticated deletes from bills" ON storage.objects
-FOR DELETE TO authenticated USING (bucket_id = 'bills');
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION handle_new_user();

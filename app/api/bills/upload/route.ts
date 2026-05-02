@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const auth = await getAuthenticatedSupabase();
   if (!auth.ok) return auth.response;
 
-  const { customer_id, start_date, end_date } = await req.json();
+  const { customer_id, start_date, end_date, billsPerPage } = await req.json();
   if (!customer_id || !start_date || !end_date) {
     return json(
       { error: "customer_id, start_date, and end_date are required" },
@@ -139,6 +139,7 @@ export async function POST(req: NextRequest) {
       totalSales: totalSales.toFixed(2),
       totalPaid: totalPaid.toFixed(2),
       finalBalance: finalBalance.toFixed(2),
+      billsPerPage: Number(billsPerPage) || 4,
     }) as React.ReactElement<import("@react-pdf/renderer").DocumentProps>
   );
 

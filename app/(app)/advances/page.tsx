@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
+import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
@@ -12,6 +13,8 @@ interface CustomerBalance {
   customer_id: string;
   name: string;
   balance: number;
+  total_sales: number;
+  total_paid: number;
   phone?: string | null;
   dairy_name?: string;
 }
@@ -30,23 +33,61 @@ export default function AdvancesPage() {
 
   const loadBalances = useCallback(async () => {
     setIsLoading(true);
-    // Use existing get_top_customers RPC function with a very wide date range to get all-time balances
-    const { data, error } = await supabaseClient.rpc("get_top_customers", {
-      p_start: "2000-01-01",
-      p_end: "2100-01-01",
-    });
+    try {
+      const { data: rows, error: cErr } = await supabaseClient
+        .from("daily_customers" as any)
+        .select("id, name, phone");
 
-    const { data: phoneData } = await supabaseClient.from("daily_customers" as any).select("id, phone") as { data: { id: string; phone: string | null }[] | null };
-    const { data: profile } = await supabaseClient.from("daily_profile").select("dairy_name").eq("id", 1).maybeSingle() as { data: any | null };
+      if (cErr) throw cErr;
 
-    if (data) {
-      const merged = (data as CustomerBalance[]).map(c => {
-        const p = phoneData?.find(pd => pd.id === c.customer_id);
-        return { ...c, phone: p?.phone, dairy_name: profile?.dairy_name || "Dairy" };
+      const { data: entries, error: eErr } = await supabaseClient
+        .from("daily_entries" as any)
+        .select("customer_id, total_amount");
+      
+      const { data: txs, error: tErr } = await supabaseClient
+        .from("daily_transactions" as any)
+        .select("customer_id, amount");
+
+      if (eErr || tErr) throw (eErr || tErr);
+
+      const { data: profile } = await supabaseClient
+        .from("daily_profile")
+        .select("dairy_name")
+        .eq("id", 1)
+        .maybeSingle();
+
+      const salesMap = new Map<string, number>();
+      const paidMap = new Map<string, number>();
+
+      for (const e of entries || []) {
+        const id = e.customer_id;
+        salesMap.set(id, (salesMap.get(id) || 0) + Number(e.total_amount || 0));
+      }
+      for (const t of txs || []) {
+        const id = t.customer_id;
+        paidMap.set(id, (paidMap.get(id) || 0) + Number(t.amount || 0));
+      }
+
+      const merged: CustomerBalance[] = (rows || []).map((c: any) => {
+        const sales = salesMap.get(c.id) || 0;
+        const paid = paidMap.get(c.id) || 0;
+        return {
+          customer_id: c.id,
+          name: c.name,
+          phone: c.phone,
+          total_sales: sales,
+          total_paid: paid,
+          balance: sales - paid,
+          dairy_name: (profile as any)?.dairy_name || "Dairy",
+        };
       });
+
       setCustomers(merged);
+    } catch (err) {
+      console.error("Error loading balances:", err);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -113,59 +154,69 @@ export default function AdvancesPage() {
             <thead className="text-xs text-muted-foreground uppercase bg-secondary/80">
               <tr>
                 <th className="px-4 py-3">Customer</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Amount</th>
+                <th className="px-4 py-3 text-right">Total Sales</th>
+                <th className="px-4 py-3 text-right">Total Paid</th>
+                <th className="px-4 py-3 text-right">Balance</th>
                 <th className="px-4 py-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-4 text-muted-foreground">Loading...</td>
+                  <td colSpan={5} className="text-center py-4 text-muted-foreground">Loading...</td>
                 </tr>
               ) : customers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-4 text-muted-foreground">No customers found.</td>
+                  <td colSpan={5} className="text-center py-4 text-muted-foreground">No customers found.</td>
                 </tr>
               ) : (
-                customers.map((c) => (
-                  <tr key={c.customer_id} className="border-b border-border hover:bg-secondary/40 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="font-medium uppercase">{c.name}</p>
-                      {c.phone && <p className="text-xs text-muted-foreground mt-0.5">📞 {c.phone}</p>}
-                    </td>
-                    <td className="px-4 py-3">
-                      {c.balance < 0 ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                          Advance Paid
-                        </span>
-                      ) : c.balance > 0 ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                          Pending to Receive
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                          Settled
-                        </span>
-                      )}
-                    </td>
-                    <td className={`px-4 py-3 text-right font-bold ${c.balance > 0 ? "text-amber-700" : c.balance < 0 ? "text-emerald-700" : ""}`}>
-                      ₹{Math.abs(c.balance).toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-2 flex-wrap">
-                        {c.balance > 0 && (
-                          <Button size="sm" variant="outline" className="text-primary hover:bg-primary/10 border-primary/20" onClick={() => handleRemindWhatsApp(c)}>
-                            Remind
+                customers.map((c) => {
+                  // We need to calculate sales and paid again or pass them from loadBalances
+                  // For now, let's use the balance and status
+                  const isAdvance = c.balance < 0;
+                  const isDue = c.balance > 0;
+                  
+                  return (
+                    <tr key={c.customer_id} className="border-b border-border hover:bg-secondary/40 transition-colors">
+                      <td className="px-4 py-3">
+                        <Link href={`/ledger/${c.customer_id}`} className="font-bold text-primary hover:underline uppercase">
+                          {c.name}
+                        </Link>
+                        {c.phone && <p className="text-xs text-muted-foreground mt-0.5">📞 {c.phone}</p>}
+                      </td>
+                      <td className="px-4 py-3 text-right text-muted-foreground">
+                        ₹{c.total_sales.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-emerald-700">
+                        ₹{c.total_paid.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex flex-col items-end">
+                          <span className={`font-bold ${isDue ? "text-amber-700" : isAdvance ? "text-emerald-700" : ""}`}>
+                            ₹{Math.abs(c.balance).toFixed(2)}
+                          </span>
+                          <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded mt-1 ${
+                            isAdvance ? "bg-emerald-100 text-emerald-800" : isDue ? "bg-amber-100 text-amber-800" : "bg-gray-100 text-gray-600"
+                          }`}>
+                            {isAdvance ? "Advance" : isDue ? "Due" : "Settled"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-2 flex-wrap">
+                          {isDue && (
+                            <Button size="sm" variant="outline" className="text-primary hover:bg-primary/10 border-primary/20" onClick={() => handleRemindWhatsApp(c)}>
+                              Remind
+                            </Button>
+                          )}
+                          <Button size="sm" onClick={() => openModal(c)}>
+                            Add Payment
                           </Button>
-                        )}
-                        <Button size="sm" onClick={() => openModal(c)}>
-                          Add Entry
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

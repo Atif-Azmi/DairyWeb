@@ -49,14 +49,54 @@ const getDateRange = (filter: string) => {
   };
 };
 
+import { useSubscription } from "@/hooks/useSubscription";
+import { SparklesIcon } from "@heroicons/react/24/solid";
+
 const DashboardPage = () => {
   const { t, lang } = useI18n();
+  const { subscription } = useSubscription();
   const [data, setData] = useState<AnalyticsDashboardData>(emptyAnalytics);
   const [filter, setFilter] = useState("today");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [reminderLoading, setReminderLoading] = useState(false);
+
+  const handleBulkReminders = async () => {
+    if (!data.topCustomers || data.topCustomers.length === 0) return;
+    
+    setReminderLoading(true);
+    try {
+      const overdue = data.topCustomers
+        .filter((c: any) => c.balance > 0)
+        .map((c: any) => ({
+          id: c.customer_id,
+          name: c.name,
+          phone: c.phone, // Assuming phone is returned in analytics
+          balance: c.balance
+        }));
+
+      if (overdue.length === 0) {
+        alert("No overdue customers found in this period.");
+        return;
+      }
+
+      if (!confirm(`Send WhatsApp reminders to ${overdue.length} customers?`)) return;
+
+      const res = await fetch("/api/whatsapp/bulk-reminders", {
+        method: "POST",
+        body: JSON.stringify({ customers: overdue }),
+      });
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
+      alert("Reminders sent successfully!");
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setReminderLoading(false);
+    }
+  };
 
   const fetchAnalytics = useCallback(async (currentFilter: string, customStart?: string, customEnd?: string) => {
     setError(null);
@@ -110,7 +150,19 @@ const DashboardPage = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{t("dashboard.title")}</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{t("dashboard.title")}</h1>
+          {subscription?.isPremium && (
+            <Button
+              onClick={handleBulkReminders}
+              disabled={reminderLoading || loading}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+            >
+              <SparklesIcon className="h-4 w-4 mr-2" />
+              {reminderLoading ? "Sending..." : "Bulk Reminders"}
+            </Button>
+          )}
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"

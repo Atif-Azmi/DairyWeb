@@ -76,18 +76,18 @@ BEGIN
     COALESCE(SUM(e.total_amount), 0) AS total_amount,
     COALESCE((
       SELECT SUM(t.amount)
-      FROM transactions t
+      FROM daily_transactions t
       WHERE t.customer_id = c.id
         AND t.date BETWEEN p_start AND p_end
     ), 0) AS total_paid,
     COALESCE(SUM(e.total_amount), 0) - COALESCE((
       SELECT SUM(t.amount)
-      FROM transactions t
+      FROM daily_transactions t
       WHERE t.customer_id = c.id
         AND t.date BETWEEN p_start AND p_end
     ), 0) AS balance
-  FROM customers c
-  LEFT JOIN entries e
+  FROM daily_customers c
+  LEFT JOIN daily_entries e
     ON e.customer_id = c.id
    AND e.date BETWEEN p_start AND p_end
   GROUP BY c.id, c.name

@@ -87,6 +87,7 @@ export type BillPdfProps = {
   totalSales: string;
   totalPaid: string;
   finalBalance: string;
+  billsPerPage?: number;
 };
 
 const BillTile = ({
@@ -102,8 +103,9 @@ const BillTile = ({
   totalSales,
   totalPaid,
   finalBalance,
-}: BillPdfProps) => (
-  <View style={styles.tile}>
+  tileStyle,
+}: BillPdfProps & { tileStyle: any }) => (
+  <View style={tileStyle}>
     <View style={styles.header}>
       <Text style={styles.brand}>{dairyName}</Text>
       {tagline ? <Text style={styles.tagline}>{tagline}</Text> : null}
@@ -157,14 +159,22 @@ const BillTile = ({
 );
 
 export function BillPdfDocument(props: BillPdfProps) {
+  const count = props.billsPerPage || 4;
+  const tiles = Array.from({ length: count });
+
+  const tileStyle = {
+    ...styles.tile,
+    width: count === 1 ? "100%" : count === 2 ? "100%" : "50%",
+    height: count === 1 ? "100%" : count === 2 ? "50%" : "50%",
+  };
+
   return (
     <Document title={`Bill \u2014 ${props.customerName}`}>
       <Page size="A4" style={styles.page}>
         <View style={styles.grid}>
-          <BillTile {...props} />
-          <BillTile {...props} />
-          <BillTile {...props} />
-          <BillTile {...props} />
+          {tiles.map((_, i) => (
+            <BillTile key={i} {...props} tileStyle={tileStyle} />
+          ))}
         </View>
       </Page>
     </Document>
