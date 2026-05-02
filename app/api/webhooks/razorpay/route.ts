@@ -10,7 +10,8 @@ const supabase = createClient(
 
 export async function POST(req: Request) {
   const body = await req.text();
-  const signature = headers().get("x-razorpay-signature");
+  const headerList = await headers();
+  const signature = headerList.get("x-razorpay-signature");
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET!;
 
   // Verify signature

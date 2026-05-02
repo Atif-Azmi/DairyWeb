@@ -1,10 +1,10 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+export const dynamic = "force-dynamic";
+import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { sendWhatsAppMessage } from "@/lib/twilio";
 
 export async function POST(req: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     .from("user_profiles")
     .select("plan")
     .eq("id", user.id)
-    .single();
+    .single() as { data: any | null };
 
   if (profile?.plan !== "plan2") {
     return NextResponse.json({ error: "Bulk reminders require Premium Plan" }, { status: 403 });

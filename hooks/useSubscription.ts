@@ -13,7 +13,7 @@ export function useSubscription() {
         return;
       }
 
-      const { data } = await supabase
+      const { data }: { data: any } = await supabase
         .from("user_profiles")
         .select("*")
         .eq("id", user.id)

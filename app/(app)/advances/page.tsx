@@ -42,11 +42,11 @@ export default function AdvancesPage() {
 
       const { data: entries, error: eErr } = await supabaseClient
         .from("daily_entries" as any)
-        .select("customer_id, total_amount");
+        .select("customer_id, total_amount") as { data: any[] | null; error: any };
       
       const { data: txs, error: tErr } = await supabaseClient
         .from("daily_transactions" as any)
-        .select("customer_id, amount");
+        .select("customer_id, amount") as { data: any[] | null; error: any };
 
       if (eErr || tErr) throw (eErr || tErr);
 
