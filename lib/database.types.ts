@@ -188,6 +188,7 @@ export type Database = {
           id: string;
           email: string | null;
           name: string | null;
+          phone: string | null;
           subscription_plan: string | null;
           subscription_status: string | null;
           subscription_start_date: string | null;
@@ -200,6 +201,7 @@ export type Database = {
           id: string;
           email?: string | null;
           name?: string | null;
+          phone?: string | null;
           subscription_plan?: string | null;
           subscription_status?: string | null;
           subscription_start_date?: string | null;
