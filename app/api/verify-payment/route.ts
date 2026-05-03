@@ -46,11 +46,13 @@ export async function POST(req: Request) {
     }
 
     // 3. WhatsApp Notification (Async - doesn't block the response)
-    const { data: profile } = await supabase
+    const { data: profileData } = await supabase
       .from("user_profiles")
-      .select("phone, name")
+      .select("*")
       .eq("id", user.id)
       .single();
+      
+    const profile = profileData as any;
 
     if (profile?.phone) {
       try {
