@@ -49,10 +49,12 @@ const Sidebar = ({ mobileOpen = false, onNavigate }: SidebarProps) => {
   const signOut = async () => {
     setSigningOut(true);
     try {
+      const { supabaseClient } = await import("@/lib/supabaseClient");
+      await supabaseClient.auth.signOut();
       await fetch("/api/auth/logout", { method: "POST" });
-      await router.replace("/login");
-      router.refresh();
-    } finally {
+      window.location.href = "/login";
+    } catch (e) {
+      console.error("Sign out failed", e);
       setSigningOut(false);
     }
   };

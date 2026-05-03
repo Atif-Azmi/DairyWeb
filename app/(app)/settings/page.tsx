@@ -6,6 +6,7 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { withTimeout } from "@/lib/withTimeout";
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 
 const FETCH_MS = 18_000;
 
@@ -20,6 +21,20 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const signOut = async () => {
+    setSigningOut(true);
+    try {
+      const { supabaseClient } = await import("@/lib/supabaseClient");
+      await supabaseClient.auth.signOut();
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/login";
+    } catch (e) {
+      console.error("Sign out failed", e);
+      setSigningOut(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -198,6 +213,18 @@ export default function SettingsPage() {
           </Button>
         </form>
       </Card>
+
+      <div className="pt-6 md:hidden">
+        <Button
+          variant="outline"
+          className="w-full min-h-[50px] border-destructive text-destructive hover:bg-destructive/10 touch-manipulation"
+          onClick={signOut}
+          disabled={signingOut}
+        >
+          <ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" />
+          {signingOut ? (lang === "hi" ? "लॉगआउट हो रहा है..." : "Signing out...") : (lang === "hi" ? "लॉगआउट करें" : "Sign Out")}
+        </Button>
+      </div>
     </div>
   );
 }
