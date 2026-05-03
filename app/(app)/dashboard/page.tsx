@@ -8,6 +8,9 @@ import AnalyticsDashboard, {
 } from "@/components/analytics/AnalyticsDashboard";
 import { withTimeout } from "@/lib/withTimeout";
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import FeatureGate from "@/components/subscription/FeatureGate";
+import { useRouter } from "next/navigation";
+import FeatureLock from "@/components/ui/FeatureLock";
 
 const FETCH_MS = 18_000;
 
@@ -54,6 +57,7 @@ import { SparklesIcon } from "@heroicons/react/24/solid";
 
 const DashboardPage = () => {
   const { t, lang } = useI18n();
+  const router = useRouter();
   const { subscription } = useSubscription();
   const [data, setData] = useState<AnalyticsDashboardData>(emptyAnalytics);
   const [filter, setFilter] = useState("today");
@@ -149,6 +153,23 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-6">
+      {subscription?.isTrialActive && (
+        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-emerald-100 p-2 rounded-lg">
+              <SparklesIcon className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="font-bold text-emerald-900">Free Trial Active</p>
+              <p className="text-sm text-emerald-700">You have full access to all Premium features for {subscription.daysLeftInTrial} more days.</p>
+            </div>
+          </div>
+          <Button variant="primary" size="sm" onClick={() => router.push("/subscription")}>
+            Upgrade Now
+          </Button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-foreground sm:text-3xl">{t("dashboard.title")}</h1>
@@ -229,7 +250,13 @@ const DashboardPage = () => {
           {t("common.loading")}
         </p>
       ) : null}
-      {error ? (
+      
+      {error?.includes("Premium Plan") ? (
+        <FeatureLock 
+          title="Premium Analytics Dashboard" 
+          description="Get deep insights into your dairy business with trends, top customers, and detailed sales analysis."
+        />
+      ) : error ? (
         <p className="text-destructive">{error}</p>
       ) : (
         <div className="space-y-4">
@@ -241,7 +268,11 @@ const DashboardPage = () => {
                 figures here.
               </p>
             )}
-          <AnalyticsDashboard data={data} />
+          
+          <AnalyticsDashboard 
+            data={data} 
+            isPremium={subscription?.isPremium} 
+          />
         </div>
       )}
     </div>

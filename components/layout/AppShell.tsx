@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useState, useCallback } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import AppHeader from "@/components/layout/AppHeader";
+import BottomNav from "@/components/layout/BottomNav";
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -26,12 +27,12 @@ export default function AppShell({ children }: { children: ReactNode }) {
         />
       ) : null}
       <Sidebar mobileOpen={mobileNavOpen} onNavigate={closeNav} />
-      <div className="flex min-w-0 min-h-screen flex-1 flex-col">
+      <div className="flex min-w-0 min-h-screen flex-1 flex-col pb-20 md:pb-0">
         <AppHeader onOpenMobileNav={openNav} />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5 md:p-8 pb-4">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5 md:p-8">
           {children}
         </main>
-        <footer className="px-4 md:px-8 py-4 border-t border-border bg-white/50 backdrop-blur-sm text-center">
+        <footer className="hidden md:block px-4 md:px-8 py-4 border-t border-border bg-white/50 backdrop-blur-sm text-center">
           <p className="text-xs text-muted-foreground">
             Developed by{" "}
             <a
@@ -45,6 +46,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </p>
         </footer>
       </div>
+      <BottomNav />
     </div>
   );
 }

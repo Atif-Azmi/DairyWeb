@@ -10,6 +10,8 @@ import Modal from "@/components/ui/Modal";
 import CustomerForm from "@/components/forms/CustomerForm";
 import TransactionForm from "@/components/forms/TransactionForm";
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { useSubscription } from "@/hooks/useSubscription";
+import { LockClosedIcon } from "@heroicons/react/24/solid";
 
 const FETCH_MS = 18_000;
 
@@ -26,6 +28,7 @@ interface CustomerSummary {
 
 const CustomersPage = () => {
   const { t, lang } = useI18n();
+  const { subscription } = useSubscription();
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -151,11 +154,12 @@ const CustomersPage = () => {
       phoneStr = "91" + phoneStr;
     }
 
-    const wa = phoneStr 
-      ? `https://wa.me/${phoneStr}?text=${encodeURIComponent(text)}`
-      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const wa = isMobile 
+      ? (phoneStr ? `https://wa.me/${phoneStr}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`)
+      : (phoneStr ? `https://web.whatsapp.com/send?phone=${phoneStr}&text=${encodeURIComponent(text)}` : `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`);
       
-    window.open(wa, "_blank", "noopener,noreferrer");
+    window.open(wa, "whatsapp_share_tab", "noopener,noreferrer");
   };
 
   return (
@@ -275,9 +279,16 @@ const CustomersPage = () => {
                           <Button
                             type="button"
                             variant="outline"
-                            className="text-primary hover:bg-primary/10 border-primary/20"
-                            onClick={() => handleRemindWhatsApp(c)}
+                            className={`flex items-center gap-1.5 ${!subscription?.isPremium ? 'opacity-50 grayscale cursor-not-allowed' : 'text-primary hover:bg-primary/10 border-primary/20'}`}
+                            onClick={() => {
+                              if (!subscription?.isPremium) {
+                                alert(lang === "hi" ? "यह फीचर केवल प्रीमियम प्लान में उपलब्ध है।" : "This feature is only available in the Premium Plan.");
+                                return;
+                              }
+                              handleRemindWhatsApp(c);
+                            }}
                           >
+                            {!subscription?.isPremium && <LockClosedIcon className="h-3 w-3" />}
                             {lang === "hi" ? "याद दिलाएं" : "Remind"}
                           </Button>
                         )}

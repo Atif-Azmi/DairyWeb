@@ -32,8 +32,12 @@ const navigation = [
   { key: "nav.products", href: "/products", icon: CubeIcon },
   { key: "nav.advances", href: "/advances", icon: WalletIcon },
   { key: "nav.billing", href: "/billing", icon: BanknotesIcon },
+  { key: "nav.subscription", href: "/subscription", icon: SparklesIcon },
   { key: "nav.settings", href: "/settings", icon: Cog6ToothIcon },
+  { key: "nav.admin", href: "/admin", icon: ShieldCheckIcon, adminOnly: true },
 ];
+
+import { ShieldCheckIcon } from "@heroicons/react/24/outline";
 
 const Sidebar = ({ mobileOpen = false, onNavigate }: SidebarProps) => {
   const pathname = usePathname();
@@ -73,7 +77,7 @@ const Sidebar = ({ mobileOpen = false, onNavigate }: SidebarProps) => {
         </Link>
       </div>
 
-      {subscription && !subscription.isStandard && !subscription.isTrialActive && (
+      {subscription && subscription.computedStatus !== "active" && !subscription.isTrialActive && (
         <div className="px-4 py-2">
           <Link 
             href="/subscription"
@@ -87,8 +91,26 @@ const Sidebar = ({ mobileOpen = false, onNavigate }: SidebarProps) => {
 
       <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto overflow-x-hidden">
         {navigation.map((item) => {
-          const isLocked = !subLoading && subscription && 
-            (item.href === "/billing" && !subscription.isStandard && !subscription.isTrialActive);
+          // Admin Check
+          if ((item as any).adminOnly && !subscription?.isAdmin) {
+            return null;
+          }
+
+          // Rule: Trial unlocks everything. 
+          // Rule: Plan 1 (isStandard) unlocks billing, advances, retail.
+          // Rule: Plan 2 (isPremium) is for specialized things (usually inside pages), 
+          // but for now let's keep the main nav mostly open if standard.
+          
+          let isLocked = false;
+          if (!subLoading && subscription) {
+            if (!subscription.isTrialActive) {
+              // Lock billing/retail/advances if not even Plan 1
+              const isStandardFeature = ["/billing", "/retail", "/advances"].some(path => item.href.startsWith(path));
+              if (isStandardFeature && !subscription.isStandard) {
+                isLocked = true;
+              }
+            }
+          }
           
           return (
             <Link
@@ -118,7 +140,7 @@ const Sidebar = ({ mobileOpen = false, onNavigate }: SidebarProps) => {
             Account Plan
           </p>
           <p className="text-xs font-bold text-primary flex items-center">
-            {subLoading ? "..." : subscription?.plan === "plan2" ? "Premium" : subscription?.plan === "plan1" ? "Standard" : "Free Trial"}
+            {subLoading ? "..." : subscription?.subscription_plan === "plan2" ? "Premium" : subscription?.subscription_plan === "plan1" ? "Standard" : (subscription?.isTrialActive ? "Free Trial" : "Plan Expired")}
             {subscription?.isTrialActive && <span className="ml-2 text-[10px] bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-700">{subscription.daysLeftInTrial}d left</span>}
           </p>
         </div>

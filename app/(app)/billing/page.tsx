@@ -11,6 +11,9 @@ import BillStatement, { type BillLine } from "@/components/bills/BillStatement";
 import { withTimeout } from "@/lib/withTimeout";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import Combobox from "@/components/ui/Combobox";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useRouter } from "next/navigation";
+import { LockClosedIcon } from "@heroicons/react/24/solid";
 
 const FETCH_MS = 18_000;
 
@@ -30,6 +33,8 @@ interface DairyProfile {
 
 const BillingPage = () => {
   const { t, lang } = useI18n();
+  const router = useRouter();
+  const { subscription } = useSubscription();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -234,6 +239,13 @@ const BillingPage = () => {
   const handlePrint = () => window.print();
 
   const handleCopyLink = async () => {
+    if (subscription?.subscription_plan === "plan1" && !subscription?.isTrialActive) {
+      if (confirm(lang === "hi" ? "लिंक कॉपी करने के लिए प्रीमियम प्लान की आवश्यकता है। क्या आप अपग्रेड करना चाहते हैं?" : "Copying links requires a Premium Plan. Would you like to upgrade?")) {
+        router.push("/subscription");
+      }
+      return;
+    }
+
     if (!shareUrl) return;
     await navigator.clipboard.writeText(shareUrl);
     setUiMessage("Link copied to clipboard.");
@@ -244,6 +256,13 @@ const BillingPage = () => {
   );
 
   const handleShareWhatsApp = () => {
+    if (subscription?.subscription_plan === "plan1" && !subscription?.isTrialActive) {
+      if (confirm(lang === "hi" ? "WhatsApp शेयरिंग के लिए प्रीमियम प्लान की आवश्यकता है। क्या आप अपग्रेड करना चाहते हैं?" : "WhatsApp sharing requires a Premium Plan. Would you like to upgrade?")) {
+        router.push("/subscription");
+      }
+      return;
+    }
+
     if (!shareUrl) return;
     const text = `Dear ${customerName},\n\nGreetings from *${profile?.dairy_name || "Dairy"}*! 🥛\n\nPlease find your bill for the period ${periodLabel} linked below.\n\nYour net payable amount is: *₹${totals.finalBalance.toFixed(2)}*\n\n📄 *Download your bill here:*\n${shareUrl}\n\nThank you for choosing us!`;
     
@@ -254,11 +273,12 @@ const BillingPage = () => {
       phoneStr = "91" + phoneStr;
     }
 
-    const wa = phoneStr 
-      ? `https://wa.me/${phoneStr}?text=${encodeURIComponent(text)}`
-      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const wa = isMobile 
+      ? (phoneStr ? `https://wa.me/${phoneStr}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`)
+      : (phoneStr ? `https://web.whatsapp.com/send?phone=${phoneStr}&text=${encodeURIComponent(text)}` : `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`);
       
-    window.open(wa, "_blank", "noopener,noreferrer");
+    window.open(wa, "whatsapp_share_tab", "noopener,noreferrer");
   };
 
   const periodLabel = startDate && endDate ? `${startDate} → ${endDate}` : "—";
@@ -405,12 +425,22 @@ const BillingPage = () => {
               {shareLoading ? "Uploading PDF…" : "Upload & get share link"}
             </Button>
             {shareUrl && (
-              <Button variant="outline" onClick={handleCopyLink}>
+              <Button 
+                variant="outline" 
+                className={`flex items-center gap-1.5 ${!subscription?.isPremium ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                onClick={handleCopyLink}
+              >
+                {!subscription?.isPremium && <LockClosedIcon className="h-3 w-3" />}
                 Copy link
               </Button>
             )}
             {shareUrl && (
-              <Button variant="outline" onClick={handleShareWhatsApp}>
+              <Button 
+                variant="outline" 
+                className={`flex items-center gap-1.5 ${!subscription?.isPremium ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                onClick={handleShareWhatsApp}
+              >
+                {!subscription?.isPremium && <LockClosedIcon className="h-3 w-3" />}
                 Share on WhatsApp
               </Button>
             )}

@@ -1,134 +1,236 @@
 "use client";
 
-import { useState } from "react";
-import { useI18n } from "@/components/i18n/LanguageProvider";
-import { CheckIcon, LockClosedIcon } from "@heroicons/react/24/outline";
+import React, { useState } from "react";
+import Card from "@/components/ui/Card";
+import Button from "@/components/ui/Button";
+import { useSubscription } from "@/hooks/useSubscription";
+import { CheckIcon } from "@heroicons/react/24/outline";
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
+const PLANS = [
+  {
+    id: "plan1",
+    name: "Plan 1",
+    price: 359,
+    description: "Ideal for basic dairy operations",
+    features: [
+      "Store and Manage Data",
+      "Generate & Download PDF Bills",
+      "Customer Ledger Management",
+      "Multi-tenant Access",
+    ],
+  },
+  {
+    id: "plan2",
+    name: "Plan 2 (Premium)",
+    price: 559,
+    description: "Complete automation for your dairy",
+    features: [
+      "All Plan 1 features",
+      "Share Bills via WhatsApp",
+      "Auto Payment Reminders",
+      "Advanced Analytics",
+      "Priority Support",
+    ],
+    popular: true,
+  },
+];
 
 export default function SubscriptionPage() {
-  const { t } = useI18n();
-  const [loading, setLoading] = useState<string | null>(null);
+  const { subscription, loading } = useSubscription();
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
-  const handleSubscribe = async (planId: string) => {
-    setLoading(planId);
-    try {
-      const res = await fetch("/api/subscriptions/create", {
-        method: "POST",
-        body: JSON.stringify({ planId }),
-      });
-      const { subscriptionId, error } = await res.json();
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) return resolve(true);
       
-      if (error) throw new Error(error);
+      // Wait up to 3 seconds for the script from RootLayout to load
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        if (window.Razorpay) {
+          clearInterval(interval);
+          resolve(true);
+        } else if (attempts > 30) { // 3 seconds
+          clearInterval(interval);
+          resolve(false);
+        }
+      }, 100);
+    });
+  };
 
-      // Load Razorpay Checkout
+  const handleUpgrade = async (planId: string) => {
+    console.log("Upgrade requested for plan:", planId);
+    setIsProcessing(planId);
+    
+    try {
+      // 1. Force load script if missing
+      const loaded = await loadRazorpayScript();
+      
+      if (!loaded || !window.Razorpay) {
+        console.error("Razorpay SDK could not be loaded");
+        alert("Payment system blocked! Please disable your Ad-blocker or try a different internet connection (like your phone's hotspot).");
+        setIsProcessing(null);
+        return;
+      }
+
+      console.log("Creating order for:", planId);
+      const orderRes = await fetch("/api/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
+      });
+
+      const orderData = await orderRes.json();
+      console.log("Order API response:", orderData);
+
+      if (orderData.error) {
+        throw new Error("Order API Error: " + orderData.error);
+      }
+
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        subscription_id: subscriptionId,
+        key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: "INR",
         name: "Dairy Management Pro",
-        description: `Subscription for ${planId}`,
-        handler: function (response: any) {
-          window.location.href = "/dashboard?success=true";
+        description: `Upgrade to ${planId === "plan1" ? "Plan 1" : "Plan 2"}`,
+        order_id: orderData.orderId,
+        handler: async (response: any) => {
+          console.log("Razorpay success response:", response);
+          const verifyRes = await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...response,
+              plan: planId,
+            }),
+          });
+
+          const verifyData = await verifyRes.json();
+          if (verifyData.success) {
+            alert("Payment successful! Your plan has been upgraded.");
+            window.location.reload();
+          } else {
+            alert("Payment verification failed: " + verifyData.error);
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            console.log("Payment modal closed by user");
+            setIsProcessing(null);
+          }
         },
         prefill: {
-          name: "",
-          email: "",
-          contact: "",
+          name: subscription?.name || "",
+          email: subscription?.email || "",
         },
         theme: {
-          color: "#059669",
+          color: "#10b981",
         },
       };
 
-      const rzp = new (window as any).Razorpay(options);
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response: any){
+        console.error("Payment failed:", response.error);
+        alert("Payment Failed: " + response.error.description);
+        setIsProcessing(null);
+      });
       rzp.open();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to initiate subscription");
-    } finally {
-      setLoading(null);
+    } catch (error: any) {
+      console.error("Upgrade Flow Error:", error);
+      alert("Error: " + (error.message || "Something went wrong while starting the payment."));
+      setIsProcessing(null);
     }
   };
 
+  if (loading) return <div className="p-8 text-center text-muted-foreground">Loading subscription data...</div>;
+
   return (
-    <div className="max-w-5xl mx-auto py-12 px-4">
-      <div className="text-center mb-16 animate-fadeUp">
-        <h1 className="text-4xl font-bold text-foreground mb-4">Choose Your Plan</h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Start with a 7-day free trial. Unlock powerful WhatsApp automation and management tools.
+    <div className="max-w-5xl mx-auto py-12 px-4 space-y-12">
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-extrabold text-foreground tracking-tight sm:text-5xl">
+          Simple, Transparent Pricing
+        </h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Choose the plan that fits your dairy operations. Start with a 7-day free trial.
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Plan 1 */}
-        <div className="bg-white rounded-3xl border border-border p-8 shadow-sm hover:shadow-md transition-all animate-fadeUp delay-100">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-foreground">Standard Plan</h2>
-            <p className="text-muted-foreground mt-2">Perfect for growing dairies</p>
-            <div className="mt-4 flex items-baseline">
-              <span className="text-4xl font-bold text-foreground">₹459</span>
-              <span className="text-muted-foreground ml-2">/ month</span>
-            </div>
-          </div>
-
-          <ul className="space-y-4 mb-10">
-            <FeatureItem text="Full Dashboard & Analytics" />
-            <FeatureItem text="Customer Ledger Management" />
-            <FeatureItem text="Billing & PDF Export" />
-            <FeatureItem text="Manual WhatsApp Sharing" />
-            <FeatureItem text="7-Day Free Trial" />
-          </ul>
-
-          <button
-            onClick={() => handleSubscribe("plan1")}
-            disabled={!!loading}
-            className="w-full py-4 bg-emerald-50 text-emerald-700 font-bold rounded-2xl hover:bg-emerald-100 transition-colors"
-          >
-            {loading === "plan1" ? "Loading..." : "Start Free Trial"}
-          </button>
+      {subscription?.computedStatus === "expired" && (
+        <div className="bg-destructive/10 border border-destructive/20 p-6 rounded-2xl text-center">
+          <p className="text-destructive font-bold text-lg">
+            Your {subscription.isTrial ? "Trial" : "Subscription"} has expired!
+          </p>
+          <p className="text-muted-foreground">Please upgrade to continue using the application features.</p>
         </div>
+      )}
 
-        {/* Plan 2 */}
-        <div className="bg-emerald-600 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all relative overflow-hidden animate-fadeUp delay-200">
-          <div className="absolute top-0 right-0 p-4">
-            <span className="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">
-              Most Popular
-            </span>
-          </div>
-          
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-white">Premium Plan</h2>
-            <p className="text-emerald-100 mt-2">Maximum recovery & automation</p>
-            <div className="mt-4 flex items-baseline">
-              <span className="text-4xl font-bold text-white">₹569</span>
-              <span className="text-emerald-100 ml-2">/ month</span>
-            </div>
-          </div>
-
-          <ul className="space-y-4 mb-10">
-            <FeatureItem text="Everything in Standard" dark />
-            <FeatureItem text="Automatic Overdue Reminders" dark />
-            <FeatureItem text="Bulk WhatsApp Reminders" dark />
-            <FeatureItem text="Daily Cron Automation" dark />
-            <FeatureItem text="Priority Admin Support" dark />
-          </ul>
-
-          <button
-            onClick={() => handleSubscribe("plan2")}
-            disabled={!!loading}
-            className="w-full py-4 bg-white text-emerald-600 font-bold rounded-2xl hover:bg-emerald-50 transition-colors shadow-lg"
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+        {PLANS.map((plan) => (
+          <Card 
+            key={plan.id} 
+            className={`flex flex-col relative h-full transition-all duration-300 hover:shadow-2xl ${
+              plan.popular ? "border-primary ring-2 ring-primary/20" : "border-border"
+            }`}
           >
-            {loading === "plan2" ? "Loading..." : "Go Premium"}
-          </button>
-        </div>
+            {plan.popular && (
+              <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                Most Popular
+              </span>
+            )}
+            
+            <div className="p-8 space-y-6 flex-grow">
+              <div className="space-y-2 text-center">
+                <h3 className="text-2xl font-bold">{plan.name}</h3>
+                <p className="text-muted-foreground">{plan.description}</p>
+              </div>
+
+              <div className="text-center">
+                <span className="text-5xl font-extrabold">₹{plan.price}</span>
+                <span className="text-muted-foreground">/month</span>
+              </div>
+
+              <ul className="space-y-4 py-6 border-y border-border">
+                {plan.features.map((feature, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <CheckIcon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground/80">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="p-8 pt-0">
+              <Button
+                className="w-full h-12 text-lg font-bold shadow-lg"
+                variant={plan.popular ? "primary" : "outline"}
+                onClick={() => handleUpgrade(plan.id)}
+                disabled={isProcessing === plan.id || subscription?.subscription_plan === plan.id}
+              >
+                {subscription?.subscription_plan === plan.id 
+                  ? "Current Plan" 
+                  : isProcessing === plan.id ? "Processing..." : "Upgrade Now"}
+              </Button>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <div className="text-center p-8 bg-secondary/30 rounded-2xl">
+        <p className="text-muted-foreground">
+          Currently on: <span className="font-bold text-foreground uppercase">{subscription?.subscription_plan || "Trial"}</span> ({subscription?.computedStatus})
+        </p>
+        {subscription?.isTrial && subscription.computedStatus !== "expired" && (
+          <p className="text-sm text-primary font-medium mt-2">
+            Trial ends in {subscription.daysLeftInTrial} days
+          </p>
+        )}
       </div>
     </div>
-  );
-}
-
-function FeatureItem({ text, dark }: { text: string; dark?: boolean }) {
-  return (
-    <li className="flex items-center">
-      <CheckIcon className={`h-5 w-5 mr-3 ${dark ? "text-emerald-200" : "text-emerald-500"}`} />
-      <span className={dark ? "text-emerald-50" : "text-foreground"}>{text}</span>
-    </li>
   );
 }

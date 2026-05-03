@@ -169,6 +169,75 @@ export type Database = {
           },
         ];
       };
+      admin_settings: {
+        Row: {
+          key: string;
+          value: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          key: string;
+          value: string;
+          updated_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["admin_settings"]["Insert"]>;
+        Relationships: [];
+      };
+      user_profiles: {
+        Row: {
+          id: string;
+          email: string | null;
+          name: string | null;
+          subscription_plan: string | null;
+          subscription_status: string | null;
+          subscription_start_date: string | null;
+          subscription_end_date: string | null;
+          trial_end_date: string | null;
+          is_locked: boolean | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id: string;
+          email?: string | null;
+          name?: string | null;
+          subscription_plan?: string | null;
+          subscription_status?: string | null;
+          subscription_start_date?: string | null;
+          subscription_end_date?: string | null;
+          trial_end_date?: string | null;
+          is_locked?: boolean | null;
+          created_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["user_profiles"]["Insert"]>;
+        Relationships: [];
+      };
+      payments: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          razorpay_payment_id: string | null;
+          razorpay_order_id: string | null;
+          amount: number | null;
+          status: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          razorpay_payment_id?: string | null;
+          razorpay_order_id?: string | null;
+          amount?: number | null;
+          status?: string | null;
+          created_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["payments"]["Insert"]>;
+        Relationships: [];
+      };
+      daily_customers: Database["public"]["Tables"]["customers"];
+      daily_products: Database["public"]["Tables"]["products"];
+      daily_entries: Database["public"]["Tables"]["entries"];
+      daily_transactions: Database["public"]["Tables"]["transactions"];
+      daily_profile: Database["public"]["Tables"]["dairy_profile"];
     };
     Views: Record<string, never>;
     Functions: {

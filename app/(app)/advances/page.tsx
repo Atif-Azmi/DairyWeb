@@ -8,6 +8,9 @@ import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useRouter } from "next/navigation";
+import { LockClosedIcon } from "@heroicons/react/24/solid";
 
 interface CustomerBalance {
   customer_id: string;
@@ -21,6 +24,8 @@ interface CustomerBalance {
 
 export default function AdvancesPage() {
   const { t, lang } = useI18n();
+  const router = useRouter();
+  const { subscription } = useSubscription();
   const [customers, setCustomers] = useState<CustomerBalance[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -102,6 +107,13 @@ export default function AdvancesPage() {
   };
 
   const handleRemindWhatsApp = (customer: CustomerBalance) => {
+    if (subscription?.subscription_plan === "plan1" && !subscription?.isTrialActive) {
+      if (confirm(lang === "hi" ? "WhatsApp शेयरिंग के लिए प्रीमियम प्लान की आवश्यकता है। क्या आप अपग्रेड करना चाहते हैं?" : "WhatsApp sharing requires a Premium Plan. Would you like to upgrade?")) {
+        router.push("/subscription");
+      }
+      return;
+    }
+
     if (!customer.phone) {
       alert(lang === "hi" ? "इस ग्राहक का फ़ोन नंबर मौजूद नहीं है।" : "Phone number missing for this customer.");
       return;
@@ -113,11 +125,12 @@ export default function AdvancesPage() {
       phoneStr = "91" + phoneStr;
     }
 
-    const wa = phoneStr 
-      ? `https://wa.me/${phoneStr}?text=${encodeURIComponent(text)}`
-      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const wa = isMobile 
+      ? (phoneStr ? `https://wa.me/${phoneStr}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`)
+      : (phoneStr ? `https://web.whatsapp.com/send?phone=${phoneStr}&text=${encodeURIComponent(text)}` : `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`);
       
-    window.open(wa, "_blank", "noopener,noreferrer");
+    window.open(wa, "whatsapp_share_tab", "noopener,noreferrer");
   };
 
   const handleTransaction = async (e: React.FormEvent) => {
@@ -205,7 +218,21 @@ export default function AdvancesPage() {
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-2 flex-wrap">
                           {isDue && (
-                            <Button size="sm" variant="outline" className="text-primary hover:bg-primary/10 border-primary/20" onClick={() => handleRemindWhatsApp(c)}>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className={`flex items-center gap-1.5 ${!subscription?.isPremium ? 'opacity-50 grayscale cursor-not-allowed' : 'text-primary hover:bg-primary/10 border-primary/20'}`}
+                              onClick={() => {
+                                if (!subscription?.isPremium) {
+                                  if (confirm(lang === "hi" ? "यह फीचर केवल प्रीमियम प्लान में उपलब्ध है। क्या आप अपग्रेड करना चाहते हैं?" : "This feature is only available in the Premium Plan. Would you like to upgrade?")) {
+                                    router.push("/subscription");
+                                  }
+                                  return;
+                                }
+                                handleRemindWhatsApp(c);
+                              }}
+                            >
+                              {!subscription?.isPremium && <LockClosedIcon className="h-3 w-3" />}
                               Remind
                             </Button>
                           )}
