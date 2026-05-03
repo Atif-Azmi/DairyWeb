@@ -252,6 +252,16 @@ export type Database = {
           balance: number;
         }[];
       };
+      handle_subscription_payment: {
+        Args: {
+          p_user_id: string;
+          p_plan_name: string;
+          p_amount: number;
+          p_order_id: string;
+          p_payment_id: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
